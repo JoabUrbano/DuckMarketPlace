@@ -2,51 +2,211 @@ MACHINE
     DuckMarketPlace
 
 SETS
-    NOMEPRODUTO; NOMEUSUARIO; IDUSUARIO; IDPRODUTO; QUANTIDADEPRODUTO; PRECO
+    NOMEPRODUTO; NOMEUSUARIO; IDUSUARIO; IDPRODUTO
     
 VARIABLES
-    usuarios, creditousuario, produtos, carrinho, estoque, precoproduto, dono
+    usuarios, creditousuario, usuariosinativos,
+    produtos, estoque, precoproduto, dono, cartcontents,
+    dividausuario
     
 INVARIANT
-    usuarios : IDUSUARIO >+> NOMEUSUARIO & // Há IDs unicos para cada usuario mesmo com nomes repetidos
-    creditousuario : IDUSUARIO >+> NAT & // Um usuario pode ter no máximo um valode de crédito
-    produtos: IDPRODUTO >+> NOMEPRODUTO & // Há IDs unicos para cada produto mesmo com nomes repetidos
-    carrinho : IDUSUARIO <-> IDPRODUTO & // Um usuario pode ter varios produtos no carrinho e um produto pode está em varios carrinhos
-    estoque : IDPRODUTO >+> QUANTIDADEPRODUTO & // Um produto tem no máximo um valor de estoque, e pode ser iniciaçizado sem ter
-    precoproduto : IDPRODUTO >+> PRECO & // Um produto tem no máximo um preço, e pode ser iniciaçizado sem ter
-    dono : IDUSUARIO +->> IDPRODUTO // Todo produto tem um dono
+    usuarios : IDUSUARIO <-> NOMEUSUARIO &
+    creditousuario : IDUSUARIO <-> NAT &
+    produtos: IDPRODUTO <-> NOMEPRODUTO &
+    estoque : IDPRODUTO <-> NAT & 
+    precoproduto : IDPRODUTO <-> NAT & 
+    dono : IDUSUARIO <-> IDPRODUTO &
+    cartcontents : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
+    
+    usuariosinativos : IDUSUARIO <-> NAT &
+    dividausuario : IDUSUARIO <-> NAT
 
 INITIALISATION
-    usuarios := {} || creditousuario := {} || produtos := {} || carrinho := {} || estoque := {} || precoproduto := {} || dono := {}
+    usuarios := {} || creditousuario := {} || usuariosinativos := {} ||
+    produtos := {} || estoque := {} || precoproduto := {} || dono := {} ||
+    cartcontents := {} || dividausuario := {}
 
 OPERATIONS
 
-adduser(ii, nn, cc) =
+addUser(ii, nn, cc) =
     PRE ii : IDUSUARIO & nn : NOMEUSUARIO & cc : NAT &
-        (ii /: dom(usuarios) & ii /: dom(creditousuario)) & usuarios[{ii}] : {}
+        ii /: dom(usuarios) & ii /: dom(creditousuario) &
+	ii /: dom(dono)
     THEN usuarios := usuarios \/ {ii |-> nn} ||
          creditousuario := creditousuario \/ {ii |-> cc}
     END;
     
-removeuser(ii) =
-    PRE ii : IDUSUARIO & ii : dom(usuarios) & ii : dom(creditousuario)
+removeUser(ii) =
+    PRE 
+        ii : IDUSUARIO &
+        ii : dom(usuarios) &
+        ii : dom(creditousuario) &
+        ii /: dom(dividausuario)
     THEN usuarios := {ii} <<| usuarios ||
-         creditousuario := {ii} <<| creditousuario //Ainda tem que remover carrinho
+         cartcontents := {ii} <<| cartcontents ||
+         
+         produtos := dono[{ii}] <<| produtos ||
+         estoque := dono[{ii}] <<| estoque ||
+         precoproduto := dono[{ii}] <<| precoproduto ||
+         
+         
+         IF creditousuario(ii) > 0 THEN
+             usuariosinativos := usuariosinativos \/ {ii |-> creditousuario(ii)}
+         ELSE
+             skip
+         END ||
+         creditousuario := {ii} <<| creditousuario
     END;
 
-altnomeusuario(ii, nn) =
+altNameUser(ii, nn) =
     PRE ii : IDUSUARIO & ii : dom(usuarios) & nn : NOMEUSUARIO
     THEN usuarios := usuarios <+ {ii |-> nn}
     END;
 
-addcredito(ii, cc) =
-    PRE ii: IDUSUARIO & cc : NAT & ii : dom(creditousuario) & ((creditousuario(ii) + cc) : NAT)
-    THEN creditousuario := creditousuario <+ {ii |-> creditousuario(ii) + cc}
+addCredit(ii, cc) =
+    PRE ii: IDUSUARIO & cc : NAT1 & ii : dom(creditousuario) & (creditousuario(ii) + cc) : NAT
+    THEN creditousuario(ii) := creditousuario(ii) + cc
     END;
     
-sacarcredito(ii, cc) = 
-    PRE ii: IDUSUARIO & cc : NAT & ii : dom(creditousuario) & ((creditousuario(ii) - cc) : NAT) & cc <= creditousuario(ii)
+withdrawCredit(ii, cc) = 
+    PRE ii: IDUSUARIO & cc : NAT1 & ii : dom(creditousuario) & ((creditousuario(ii) - cc) : NAT) & cc <= creditousuario(ii)
     THEN creditousuario := creditousuario <+ {ii |-> creditousuario(ii) - cc}
-    END
+    END;
 
+addProduct(ii, nn, uu) =
+    PRE ii : IDPRODUTO & nn : NOMEPRODUTO & uu : IDUSUARIO & ii /: dom(produtos) & uu : dom(usuarios)
+    THEN produtos := produtos \/ {ii |-> nn} ||
+         dono := dono \/ {uu |-> ii}
+    END;
+
+removeProduct(ii)=
+   PRE ii : IDPRODUTO & ii : dom(produtos)
+   THEN produtos := {ii} <<| produtos ||
+        dono := dono |>> {ii} ||
+        estoque := {ii} <<| estoque ||
+        precoproduto := {ii} <<| precoproduto
+   END;
+
+altProductName(ii, nn) =
+    PRE ii : IDPRODUTO & ii : dom(produtos) & nn : NOMEPRODUTO
+    THEN produtos := produtos <+ {ii |-> nn}
+    END;
+
+altProductStock(ii, qq) =
+    PRE ii : IDPRODUTO & ii : dom(produtos) & qq : NAT
+    THEN estoque := estoque <+ {ii |-> qq}
+    END;
+
+altProductPrice(ii, pp) =
+    PRE ii : IDPRODUTO & ii : dom(produtos) & pp : NAT
+    THEN precoproduto := precoproduto <+ {ii |-> pp}
+    END;
+
+addProductToCart(uu, pp, qq) =
+    PRE
+      uu : IDUSUARIO & 
+      pp : IDPRODUTO & 
+      uu : dom(usuarios) & 
+      pp : dom(produtos) &
+      uu /= dono~(pp) &
+      qq : NAT1 &
+      precoproduto(pp) * qq <= creditousuario(uu) &
+      qq <= estoque(pp) 
+    THEN 
+      IF uu /: dom(cartcontents) THEN
+          cartcontents(uu) := {pp |-> {precoproduto(pp) |-> qq}}
+      ELSE
+          IF pp : dom(cartcontents(uu)) THEN
+              IF precoproduto(pp) : dom(cartcontents(uu)(pp)) THEN
+                  cartcontents(uu)(pp)(precoproduto(pp)) := cartcontents(uu)(pp)(precoproduto(pp)) + qq
+              ELSE
+                  cartcontents(uu)(pp) := cartcontents(uu)(pp) \/ {precoproduto(pp) |-> qq}
+              END
+          ELSE
+              cartcontents(uu) := cartcontents(uu) \/ {pp |-> {precoproduto(pp) |-> qq}}
+          END
+      END ||
+      creditousuario := creditousuario <+ {
+          uu |-> (creditousuario(uu) - (precoproduto(pp) * qq)),
+          dono~(pp) |-> (creditousuario(dono~(pp)) + (precoproduto(pp) * qq))
+      } ||
+      estoque(pp) := estoque(pp) - qq
+    END;
+
+
+removeProductFromCart(uu, pp, rr, qq) =
+  PRE
+    uu : IDUSUARIO &
+    uu : dom(cartcontents) &
+    pp : dom(cartcontents(uu)) &
+    rr : NAT &
+    qq : NAT1 &
+    rr : dom(cartcontents(uu)(pp)) &
+    qq <= cartcontents(uu)(pp)(rr)
+  THEN
+    IF dono~(pp) : dom(dividausuario) THEN
+        dividausuario(dono~(pp)) := dividausuario(dono~(pp)) + (cartcontents(uu)(pp)(rr) * rr)
+    ELSE
+        dividausuario := dividausuario \/ {dono~(pp) |-> cartcontents(uu)(pp)(rr) * rr}
+    END ||
+    creditousuario(uu) := creditousuario(uu) + cartcontents(uu)(pp)(rr) * rr ||
+    IF qq = cartcontents(uu)(pp)(rr) THEN
+      IF card(cartcontents(uu)(pp)) <= 1 THEN
+           cartcontents(uu) := {pp} <<| cartcontents(uu)
+      ELSE
+          cartcontents(uu)(pp) := {rr} <<| cartcontents(uu)(pp)
+      END
+    ELSE
+      cartcontents(uu)(pp)(rr) := cartcontents(uu)(pp)(rr) - qq
+    END
+    ||
+    IF pp : dom(estoque) THEN
+        estoque := estoque <+ {
+          pp |-> estoque(pp) + qq
+        }
+    ELSE
+        skip
+    END
+  END;
+
+payDebt(ii) = 
+    PRE 
+        ii : IDUSUARIO &
+        ii : dom(dividausuario) &
+        ii : dom(usuarios) &
+        ii : dom(creditousuario)
+    THEN
+        IF creditousuario(ii) >= dividausuario(ii) THEN
+            creditousuario(ii) := creditousuario(ii) - dividausuario(ii) ||
+	    dividausuario := {ii} <<| dividausuario
+        ELSE
+            dividausuario(ii) := dividausuario(ii) - creditousuario(ii) ||
+	    creditousuario(ii) := 0
+	END
+    END;
+
+payDebtWithCredit(ii, cc) =
+    PRE
+        ii : IDUSUARIO &
+        ii : dom(dividausuario) &
+        cc : NAT1
+    THEN
+        IF cc >= dividausuario(ii) THEN
+            dividausuario := {ii} <<| dividausuario
+        ELSE
+            dividausuario(ii) := dividausuario(ii) - cc
+        END
+    END;
+    
+withdrawInactiveCredit(uu) =
+    PRE uu : IDUSUARIO & uu : dom(usuariosinativos)
+    THEN 
+        usuariosinativos := usuariosinativos <+ {uu |-> 0}
+    END;
+    
+removeInactiveUser(uu) =
+    PRE uu : IDUSUARIO & uu : dom(usuariosinativos) & usuariosinativos(uu) <= 0
+    THEN 
+        usuariosinativos := {uu} <<| usuariosinativos
+    END
 END
