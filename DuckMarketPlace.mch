@@ -19,7 +19,10 @@ INVARIANT
     cartcontents : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
     
     usuariosinativos : IDUSUARIO <-> NAT &
-    dividausuario : IDUSUARIO <-> NAT
+    dividausuario : IDUSUARIO <-> NAT &
+
+    dom(usuarios) /\ dom(usuariosinativos) = {} &
+    dom(produtos) /\ ran(dono) = {}
 
 INITIALISATION
     usuarios := {} || creditousuario := {} || usuariosinativos := {} ||
@@ -31,7 +34,8 @@ OPERATIONS
 addUser(ii, nn, cc) =
     PRE ii : IDUSUARIO & nn : NOMEUSUARIO & cc : NAT &
         ii /: dom(usuarios) & ii /: dom(creditousuario) &
-	ii /: dom(dono)
+	ii /: dom(dono) &
+	ii /: dom(usuariosinativos)
     THEN usuarios := usuarios \/ {ii |-> nn} ||
          creditousuario := creditousuario \/ {ii |-> cc}
     END;
@@ -69,12 +73,19 @@ addCredit(ii, cc) =
     END;
     
 withdrawCredit(ii, cc) = 
-    PRE ii: IDUSUARIO & cc : NAT1 & ii : dom(creditousuario) & ((creditousuario(ii) - cc) : NAT) & cc <= creditousuario(ii)
+    PRE ii: IDUSUARIO & cc : NAT1 &
+	ii : dom(creditousuario) &
+	((creditousuario(ii) - cc) : NAT) &
+	cc <= creditousuario(ii) &
+	ii /: dom(dividausuario)
     THEN creditousuario := creditousuario <+ {ii |-> creditousuario(ii) - cc}
     END;
 
 addProduct(ii, nn, uu) =
-    PRE ii : IDPRODUTO & nn : NOMEPRODUTO & uu : IDUSUARIO & ii /: dom(produtos) & uu : dom(usuarios)
+    PRE ii : IDPRODUTO & nn : NOMEPRODUTO &
+	uu : IDUSUARIO & ii /: dom(produtos) &
+	ii /: ran(dono) &
+	uu : dom(usuarios)
     THEN produtos := produtos \/ {ii |-> nn} ||
          dono := dono \/ {uu |-> ii}
     END;
