@@ -22,7 +22,7 @@ INVARIANT
     dividausuario : IDUSUARIO <-> NAT &
 
     dom(usuarios) /\ dom(usuariosinativos) = {} &
-    dom(produtos) /\ ran(dono) = {}
+    dom(produtos) <: ran(dono) // Todo produto tem um dono
 
 INITIALISATION
     usuarios := {} || creditousuario := {} || usuariosinativos := {} ||
@@ -109,7 +109,7 @@ altProductStock(ii, qq) =
     END;
 
 altProductPrice(ii, pp) =
-    PRE ii : IDPRODUTO & ii : dom(produtos) & pp : NAT
+    PRE ii : IDPRODUTO & ii : dom(produtos) & pp : NAT1
     THEN precoproduto := precoproduto <+ {ii |-> pp}
     END;
 
@@ -210,7 +210,8 @@ payDebtWithCredit(ii, cc) =
     END;
     
 withdrawInactiveCredit(uu) =
-    PRE uu : IDUSUARIO & uu : dom(usuariosinativos)
+    PRE uu : IDUSUARIO & uu : dom(usuariosinativos) &
+	uu /: dom(dividausuario)
     THEN 
         usuariosinativos := usuariosinativos <+ {uu |-> 0}
     END;
