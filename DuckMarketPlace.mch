@@ -6,8 +6,8 @@ SETS
     
 VARIABLES
     usuarios, creditousuario, usuariosinativos,
-    produtos, estoque, precoproduto, dono, cartcontents,
-    dividausuario
+    produtos, estoque, precoproduto, dono, purchasedProducts,
+    dividausuario, cartContents
     
 INVARIANT
     usuarios : IDUSUARIO +-> NOMEUSUARIO &
@@ -16,7 +16,8 @@ INVARIANT
     estoque : IDPRODUTO +-> NAT & 
     precoproduto : IDPRODUTO +-> NAT & 
     dono : IDUSUARIO <-> IDPRODUTO & 
-    cartcontents : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
+    purchasedProducts : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
+    cartContents : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
     
     usuariosinativos : IDUSUARIO +-> NAT &
     dividausuario : IDUSUARIO +-> NAT &
@@ -25,9 +26,11 @@ INVARIANT
     dom(produtos) <: ran(dono) // Todo produto tem um dono
 
 INITIALISATION
-    usuarios := {} || creditousuario := {} || usuariosinativos := {} ||
-    produtos := {} || estoque := {} || precoproduto := {} || dono := {} ||
-    cartcontents := {} || dividausuario := {}
+    usuarios := {} || creditousuario := {} ||
+    usuariosinativos := {} || produtos := {} ||
+    estoque := {} || precoproduto := {} || dono := {} ||
+    purchasedProducts := {} || dividausuario := {} ||
+    cartContents := {}
 
 OPERATIONS
 
@@ -47,7 +50,7 @@ removeUser(ii) =
         ii : dom(creditousuario) &
         ii /: dom(dividausuario)
     THEN usuarios := {ii} <<| usuarios ||
-         cartcontents := {ii} <<| cartcontents ||
+         purchasedProducts := {ii} <<| purchasedProducts ||
          
          produtos := dono[{ii}] <<| produtos ||
          estoque := dono[{ii}] <<| estoque ||
@@ -113,6 +116,73 @@ altProductPrice(ii, pp) =
     THEN precoproduto := precoproduto <+ {ii |-> pp}
     END;
 
+buyProduct(uu, pp, qq) =
+    PRE
+      uu : IDUSUARIO & 
+      pp : IDPRODUTO & 
+      uu : dom(usuarios) & 
+      pp : dom(produtos) &
+      uu /= dono~(pp) &
+      qq : NAT1 &
+      precoproduto(pp) * qq <= creditousuario(uu) &
+      qq <= estoque(pp) 
+    THEN 
+      IF uu /: dom(purchasedProducts) THEN
+          purchasedProducts(uu) := {pp |-> {precoproduto(pp) |-> qq}}
+      ELSE
+          IF pp : dom(purchasedProducts(uu)) THEN
+              IF precoproduto(pp) : dom(purchasedProducts(uu)(pp)) THEN
+                  purchasedProducts(uu)(pp)(precoproduto(pp)) := purchasedProducts(uu)(pp)(precoproduto(pp)) + qq
+              ELSE
+                  purchasedProducts(uu)(pp) := purchasedProducts(uu)(pp) \/ {precoproduto(pp) |-> qq}
+              END
+          ELSE
+              purchasedProducts(uu) := purchasedProducts(uu) \/ {pp |-> {precoproduto(pp) |-> qq}}
+          END
+      END ||
+      creditousuario := creditousuario <+ {
+          uu |-> (creditousuario(uu) - (precoproduto(pp) * qq)),
+          dono~(pp) |-> (creditousuario(dono~(pp)) + (precoproduto(pp) * qq))
+      } ||
+      estoque(pp) := estoque(pp) - qq
+    END;
+
+
+returnProduct(uu, pp, rr, qq) =
+  PRE
+    uu : IDUSUARIO &
+    uu : dom(purchasedProducts) &
+    pp : dom(purchasedProducts(uu)) &
+    rr : NAT &
+    qq : NAT1 &
+    rr : dom(purchasedProducts(uu)(pp)) &
+    qq <= purchasedProducts(uu)(pp)(rr)
+  THEN
+    IF dono~(pp) : dom(dividausuario) THEN
+        dividausuario(dono~(pp)) := dividausuario(dono~(pp)) + (purchasedProducts(uu)(pp)(rr) * rr)
+    ELSE
+        dividausuario := dividausuario \/ {dono~(pp) |-> purchasedProducts(uu)(pp)(rr) * rr}
+    END ||
+    creditousuario(uu) := creditousuario(uu) + purchasedProducts(uu)(pp)(rr) * rr ||
+    IF qq = purchasedProducts(uu)(pp)(rr) THEN
+      IF card(purchasedProducts(uu)(pp)) <= 1 THEN
+           purchasedProducts(uu) := {pp} <<| purchasedProducts(uu)
+      ELSE
+          purchasedProducts(uu)(pp) := {rr} <<| purchasedProducts(uu)(pp)
+      END
+    ELSE
+      purchasedProducts(uu)(pp)(rr) := purchasedProducts(uu)(pp)(rr) - qq
+    END
+    ||
+    IF pp : dom(estoque) THEN
+        estoque := estoque <+ {
+          pp |-> estoque(pp) + qq
+        }
+    ELSE
+        skip
+    END
+  END;
+
 addProductToCart(uu, pp, qq) =
     PRE
       uu : IDUSUARIO & 
@@ -124,51 +194,40 @@ addProductToCart(uu, pp, qq) =
       precoproduto(pp) * qq <= creditousuario(uu) &
       qq <= estoque(pp) 
     THEN 
-      IF uu /: dom(cartcontents) THEN
-          cartcontents(uu) := {pp |-> {precoproduto(pp) |-> qq}}
+      IF uu /: dom(cartContents) THEN
+          cartContents(uu) := {pp |-> {precoproduto(pp) |-> qq}}
       ELSE
-          IF pp : dom(cartcontents(uu)) THEN
-              IF precoproduto(pp) : dom(cartcontents(uu)(pp)) THEN
-                  cartcontents(uu)(pp)(precoproduto(pp)) := cartcontents(uu)(pp)(precoproduto(pp)) + qq
+          IF pp : dom(cartContents(uu)) THEN
+              IF precoproduto(pp) : dom(cartContents(uu)(pp)) THEN
+                  cartContents(uu)(pp)(precoproduto(pp)) := cartContents(uu)(pp)(precoproduto(pp)) + qq
               ELSE
-                  cartcontents(uu)(pp) := cartcontents(uu)(pp) \/ {precoproduto(pp) |-> qq}
+                  cartContents(uu)(pp) := cartContents(uu)(pp) \/ {precoproduto(pp) |-> qq}
               END
           ELSE
-              cartcontents(uu) := cartcontents(uu) \/ {pp |-> {precoproduto(pp) |-> qq}}
+              cartContents(uu) := cartContents(uu) \/ {pp |-> {precoproduto(pp) |-> qq}}
           END
       END ||
-      creditousuario := creditousuario <+ {
-          uu |-> (creditousuario(uu) - (precoproduto(pp) * qq)),
-          dono~(pp) |-> (creditousuario(dono~(pp)) + (precoproduto(pp) * qq))
-      } ||
       estoque(pp) := estoque(pp) - qq
     END;
-
 
 removeProductFromCart(uu, pp, rr, qq) =
   PRE
     uu : IDUSUARIO &
-    uu : dom(cartcontents) &
-    pp : dom(cartcontents(uu)) &
+    uu : dom(cartContents) &
+    pp : dom(cartContents(uu)) &
     rr : NAT &
     qq : NAT1 &
-    rr : dom(cartcontents(uu)(pp)) &
-    qq <= cartcontents(uu)(pp)(rr)
+    rr : dom(cartContents(uu)(pp)) &
+    qq <= cartContents(uu)(pp)(rr)
   THEN
-    IF dono~(pp) : dom(dividausuario) THEN
-        dividausuario(dono~(pp)) := dividausuario(dono~(pp)) + (cartcontents(uu)(pp)(rr) * rr)
-    ELSE
-        dividausuario := dividausuario \/ {dono~(pp) |-> cartcontents(uu)(pp)(rr) * rr}
-    END ||
-    creditousuario(uu) := creditousuario(uu) + cartcontents(uu)(pp)(rr) * rr ||
-    IF qq = cartcontents(uu)(pp)(rr) THEN
-      IF card(cartcontents(uu)(pp)) <= 1 THEN
-           cartcontents(uu) := {pp} <<| cartcontents(uu)
+   IF qq = cartContents(uu)(pp)(rr) THEN
+      IF card(cartContents(uu)(pp)) <= 1 THEN
+           cartContents(uu) := {pp} <<| cartContents(uu)
       ELSE
-          cartcontents(uu)(pp) := {rr} <<| cartcontents(uu)(pp)
+          cartContents(uu)(pp) := {rr} <<| cartContents(uu)(pp)
       END
     ELSE
-      cartcontents(uu)(pp)(rr) := cartcontents(uu)(pp)(rr) - qq
+      cartContents(uu)(pp)(rr) := cartContents(uu)(pp)(rr) - qq
     END
     ||
     IF pp : dom(estoque) THEN
