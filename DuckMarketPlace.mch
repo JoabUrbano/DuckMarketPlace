@@ -7,7 +7,7 @@ SETS
 VARIABLES
     usuarios, creditousuario, usuariosinativos,
     produtos, estoque, precoproduto, dono, purchasedProducts,
-    dividausuario, cartContents
+    dividausuario, cartContents, totalPriceCart
     
 INVARIANT
     usuarios : IDUSUARIO +-> NOMEUSUARIO &
@@ -15,12 +15,15 @@ INVARIANT
     produtos: IDPRODUTO +-> NOMEPRODUTO &
     estoque : IDPRODUTO +-> NAT & 
     precoproduto : IDPRODUTO +-> NAT & 
+    
     dono : IDUSUARIO <-> IDPRODUTO & 
     purchasedProducts : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
     cartContents : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
-    
+    totalPriceCart : IDUSUARIO +-> NAT &
+ 
     usuariosinativos : IDUSUARIO +-> NAT &
     dividausuario : IDUSUARIO +-> NAT &
+
 
     dom(usuarios) /\ dom(usuariosinativos) = {} &
     dom(produtos) <: ran(dono) // Todo produto tem um dono
@@ -30,17 +33,18 @@ INITIALISATION
     usuariosinativos := {} || produtos := {} ||
     estoque := {} || precoproduto := {} || dono := {} ||
     purchasedProducts := {} || dividausuario := {} ||
-    cartContents := {}
+    cartContents := {} || totalPriceCart := {}
 
 OPERATIONS
 
-addUser(ii, nn, cc) =
-    PRE ii : IDUSUARIO & nn : NOMEUSUARIO & cc : NAT &
-        ii /: dom(usuarios) & ii /: dom(creditousuario) &
-	ii /: dom(dono) &
-	ii /: dom(usuariosinativos)
-    THEN usuarios := usuarios \/ {ii |-> nn} ||
-         creditousuario := creditousuario \/ {ii |-> cc}
+addUser(uu, nn, cc) =
+    PRE uu : IDUSUARIO & nn : NOMEUSUARIO & cc : NAT &
+        uu /: dom(usuarios) & uu /: dom(creditousuario) &
+	uu /: dom(dono) &
+	uu /: dom(usuariosinativos) 
+    THEN usuarios := usuarios \/ {uu |-> nn} ||
+         creditousuario := creditousuario \/ {uu |-> cc} ||
+	 totalPriceCart := totalPriceCart \/ {uu |-> 0}
     END;
     
 removeUser(ii) =
@@ -55,6 +59,7 @@ removeUser(ii) =
          produtos := dono[{ii}] <<| produtos ||
          estoque := dono[{ii}] <<| estoque ||
          precoproduto := dono[{ii}] <<| precoproduto ||
+	 totalPriceCart := {ii} <<| totalPriceCart ||
          
          
          IF creditousuario(ii) > 0 THEN
@@ -191,6 +196,7 @@ addProductToCart(uu, pp, qq) =
       pp : dom(produtos) &
       uu /= dono~(pp) &
       qq : NAT1 &
+      uu : dom(totalPriceCart) &
       precoproduto(pp) * qq <= creditousuario(uu) &
       qq <= estoque(pp) 
     THEN 
@@ -207,6 +213,7 @@ addProductToCart(uu, pp, qq) =
               cartContents(uu) := cartContents(uu) \/ {pp |-> {precoproduto(pp) |-> qq}}
           END
       END ||
+      totalPriceCart(uu) := totalPriceCart(uu) + (precoproduto(pp)*qq) ||
       estoque(pp) := estoque(pp) - qq
     END;
 
@@ -221,14 +228,16 @@ removeProductFromCart(uu, pp, rr, qq) =
     qq <= cartContents(uu)(pp)(rr)
   THEN
    IF qq = cartContents(uu)(pp)(rr) THEN
+      totalPriceCart(uu) := totalPriceCart(uu) - (cartContents(uu)(pp)(rr) * rr) ||
       IF card(cartContents(uu)(pp)) <= 1 THEN
            cartContents(uu) := {pp} <<| cartContents(uu)
       ELSE
           cartContents(uu)(pp) := {rr} <<| cartContents(uu)(pp)
       END
-    ELSE
+   ELSE
+      totalPriceCart(uu) := totalPriceCart(uu) - (qq * rr) ||
       cartContents(uu)(pp)(rr) := cartContents(uu)(pp)(rr) - qq
-    END
+   END
     ||
     IF pp : dom(estoque) THEN
         estoque := estoque <+ {
@@ -238,6 +247,23 @@ removeProductFromCart(uu, pp, rr, qq) =
         skip
     END
   END;
+
+buyProductsFromCart(uu) =
+    PRE uu : IDUSUARIO & uu : dom(cartContents) &
+        uu : dom(creditousuario) &
+	uu : dom(totalPriceCart) &
+        creditousuario(uu) >= totalPriceCart(uu)
+    THEN
+	creditousuario(uu) := creditousuario(uu) - totalPriceCart(uu) ||
+	totalPriceCart(uu) := 0 ||
+	cartContents := {uu} <<| cartContents ||
+	IF uu : dom(purchasedProducts) THEN
+	    purchasedProducts(uu) := purchasedProducts(uu) \/ cartContents(uu)
+	ELSE
+	    purchasedProducts := purchasedProducts \/ {uu |-> cartContents(uu)}
+	END
+	
+    END;
 
 payDebt(ii) = 
     PRE 
@@ -279,5 +305,14 @@ removeInactiveUser(uu) =
     PRE uu : IDUSUARIO & uu : dom(usuariosinativos) & usuariosinativos(uu) <= 0
     THEN 
         usuariosinativos := {uu} <<| usuariosinativos
-    END
+    END;
+
+// Operações de query
+oo <-- showUserCredit(uu) =
+	oo := creditousuario(uu);
+
+oo <-- showUserCartValue(uu) =
+	oo := totalPriceCart(uu)
+
+
 END
