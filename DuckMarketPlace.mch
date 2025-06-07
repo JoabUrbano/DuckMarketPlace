@@ -10,16 +10,16 @@ VARIABLES
     dividausuario
     
 INVARIANT
-    usuarios : IDUSUARIO <-> NOMEUSUARIO &
-    creditousuario : IDUSUARIO <-> NAT &
-    produtos: IDPRODUTO <-> NOMEPRODUTO &
-    estoque : IDPRODUTO <-> NAT & 
-    precoproduto : IDPRODUTO <-> NAT & 
-    dono : IDUSUARIO <-> IDPRODUTO &
+    usuarios : IDUSUARIO +-> NOMEUSUARIO &
+    creditousuario : IDUSUARIO +-> NAT &
+    produtos: IDPRODUTO +-> NOMEPRODUTO &
+    estoque : IDPRODUTO +-> NAT & 
+    precoproduto : IDPRODUTO +-> NAT & 
+    dono : IDUSUARIO <-> IDPRODUTO & 
     cartcontents : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
     
-    usuariosinativos : IDUSUARIO <-> NAT &
-    dividausuario : IDUSUARIO <-> NAT &
+    usuariosinativos : IDUSUARIO +-> NAT &
+    dividausuario : IDUSUARIO +-> NAT &
 
     dom(usuarios) /\ dom(usuariosinativos) = {} &
     dom(produtos) <: ran(dono) // Todo produto tem um dono
