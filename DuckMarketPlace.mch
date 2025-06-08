@@ -30,7 +30,7 @@ INVARIANT
     estoque : IDPRODUTO +-> NAT & 
     precoproduto : IDPRODUTO +-> NAT & 
     
-    dono : IDUSUARIO <-> IDPRODUTO & 
+    dono : IDUSUARIO +-> IDPRODUTO & 
     purchasedProducts : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
     cartContents : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
     totalPriceCart : IDUSUARIO +-> NAT &
