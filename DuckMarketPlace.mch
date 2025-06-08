@@ -5,13 +5,27 @@ SETS
     NOMEPRODUTO; NOMEUSUARIO; IDUSUARIO; IDPRODUTO
     
 VARIABLES
-    usuarios, creditousuario, usuariosinativos,
-    produtos, estoque, precoproduto, dono, purchasedProducts,
-    dividausuario, cartContents, totalPriceCart
+    usuarios,
+    creditousuario,
+    usuariosinativos,
+    dividausuario,
+    userIdsUsed,
+
+    produtos,
+    estoque,
+    precoproduto,
+    
+    dono,
+    purchasedProducts,
+    cartContents,
+    totalPriceCart
     
 INVARIANT
     usuarios : IDUSUARIO +-> NOMEUSUARIO &
     creditousuario : IDUSUARIO +-> NAT &
+    usuariosinativos : IDUSUARIO +-> NAT &
+    dividausuario : IDUSUARIO +-> NAT &
+    
     produtos: IDPRODUTO +-> NOMEPRODUTO &
     estoque : IDPRODUTO +-> NAT & 
     precoproduto : IDPRODUTO +-> NAT & 
@@ -20,31 +34,43 @@ INVARIANT
     purchasedProducts : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
     cartContents : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
     totalPriceCart : IDUSUARIO +-> NAT &
- 
-    usuariosinativos : IDUSUARIO +-> NAT &
-    dividausuario : IDUSUARIO +-> NAT &
 
+    userIdsUsed <: IDUSUARIO &
+    dom(usuarios) <: userIdsUsed &
+    dom(usuariosinativos) <: userIdsUsed &
+    dom(dono) <: userIdsUsed &
+    dom(creditousuario) <: userIdsUsed &
 
     dom(usuarios) /\ dom(usuariosinativos) = {} &
-    dom(produtos) <: ran(dono) // Todo produto tem um dono
+    dom(produtos) <: ran(dono)
 
 INITIALISATION
-    usuarios := {} || creditousuario := {} ||
-    usuariosinativos := {} || produtos := {} ||
-    estoque := {} || precoproduto := {} || dono := {} ||
-    purchasedProducts := {} || dividausuario := {} ||
-    cartContents := {} || totalPriceCart := {}
+    usuarios := {} ||
+    creditousuario := {} ||
+    usuariosinativos := {} ||
+    dividausuario := {} ||
+    userIdsUsed := {} ||
+
+    produtos := {} ||
+    estoque := {} ||
+    precoproduto := {} ||
+    
+    dono := {} ||
+    purchasedProducts := {} ||
+    cartContents := {} ||
+    totalPriceCart := {}
 
 OPERATIONS
 
 addUser(uu, nn, cc) =
     PRE uu : IDUSUARIO & nn : NOMEUSUARIO & cc : NAT &
-        uu /: dom(usuarios) & uu /: dom(creditousuario) &
-	uu /: dom(dono) &
-	uu /: dom(usuariosinativos) 
-    THEN usuarios := usuarios \/ {uu |-> nn} ||
-         creditousuario := creditousuario \/ {uu |-> cc} ||
-	 totalPriceCart := totalPriceCart \/ {uu |-> 0}
+        uu /: userIdsUsed 
+    THEN 
+        usuarios := usuarios \/ {uu |-> nn} ||
+        creditousuario := creditousuario \/ {uu |-> cc} ||
+	totalPriceCart := totalPriceCart \/ {uu |-> 0} ||
+
+        userIdsUsed := userIdsUsed \/ {uu}
     END;
     
 removeUser(ii) =
@@ -53,13 +79,16 @@ removeUser(ii) =
         ii : dom(usuarios) &
         ii : dom(creditousuario) &
         ii /: dom(dividausuario)
-    THEN usuarios := {ii} <<| usuarios ||
-         purchasedProducts := {ii} <<| purchasedProducts ||
+    THEN 
+         usuarios := {ii} <<| usuarios ||
          
          produtos := dono[{ii}] <<| produtos ||
          estoque := dono[{ii}] <<| estoque ||
          precoproduto := dono[{ii}] <<| precoproduto ||
-	 totalPriceCart := {ii} <<| totalPriceCart ||
+	 
+         totalPriceCart := {ii} <<| totalPriceCart ||
+         purchasedProducts := {ii} <<| purchasedProducts ||
+         cartContents := {ii} <<| cartContents ||
          
          
          IF creditousuario(ii) > 0 THEN
@@ -81,7 +110,9 @@ addCredit(ii, cc) =
     END;
     
 withdrawCredit(ii, cc) = 
-    PRE ii: IDUSUARIO & cc : NAT1 &
+    PRE 
+        ii: IDUSUARIO &
+        cc : NAT1 &
 	ii : dom(creditousuario) &
 	((creditousuario(ii) - cc) : NAT) &
 	cc <= creditousuario(ii) &
