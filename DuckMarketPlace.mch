@@ -16,10 +16,15 @@ VARIABLES
     precoproduto,
     
     dono,
-    purchasedProducts,
-    purchasedProductsCart,
     cartContents,
-    totalPriceCart
+    totalPriceCart,
+    ownerCartProducts,
+
+    idPurchase,
+    lastPurchase,
+    lastPurchaseId,
+    purchaseUsers,
+    purchaseHistory
     
 INVARIANT
     usuarios : IDUSUARIO +-> NOMEUSUARIO &
@@ -32,10 +37,15 @@ INVARIANT
     precoproduto : IDPRODUTO +-> NAT & 
     
     dono : IDUSUARIO <-> IDPRODUTO & 
-    purchasedProducts : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
-    purchasedProductsCart : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
     cartContents : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
     totalPriceCart : IDUSUARIO +-> NAT &
+    ownerCartProducts : IDUSUARIO +-> IDUSUARIO &
+    
+    lastPurchase : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
+    purchaseUsers : IDUSUARIO <-> NAT &
+    purchaseHistory : NAT <-> (IDPRODUTO <-> (NAT <-> NAT)) &
+    idPurchase : NAT &
+    lastPurchaseId : NAT &
 
     userIdsUsed <: IDUSUARIO &
     dom(usuarios) <: userIdsUsed &
@@ -58,10 +68,15 @@ INITIALISATION
     precoproduto := {} ||
     
     dono := {} ||
-    purchasedProducts := {} ||
-    purchasedProductsCart := {} ||
     cartContents := {} ||
-    totalPriceCart := {}
+    totalPriceCart := {} ||
+    ownerCartProducts := {} ||
+
+    idPurchase := 0 ||
+    lastPurchaseId := 0 ||
+    lastPurchase := {} ||
+    purchaseUsers := {} ||
+    purchaseHistory := {}
 
 OPERATIONS
 
@@ -90,8 +105,8 @@ removeUser(uu) =
         precoproduto := dono[{uu}] <<| precoproduto ||
 	 
         totalPriceCart := {uu} <<| totalPriceCart ||
-        purchasedProducts := {uu} <<| purchasedProducts ||
-	purchasedProductsCart := {uu} <<| purchasedProducts ||
+        purchaseHistory := purchaseUsers[{uu}] <<| purchaseHistory || 
+	purchaseUsers := {uu} <<| purchaseUsers ||
         cartContents := {uu} <<| cartContents ||
          
          
@@ -173,52 +188,48 @@ buyProduct(uu, pp, qq) =
       qq : NAT1 &
       precoproduto(pp) * qq <= creditousuario(uu) &
       qq <= estoque(pp) 
-    THEN 
-      IF uu /: dom(purchasedProducts) THEN
-          purchasedProducts(uu) := {pp |-> {precoproduto(pp) |-> qq}}
-      ELSE
-          IF pp : dom(purchasedProducts(uu)) THEN
-              IF precoproduto(pp) : dom(purchasedProducts(uu)(pp)) THEN
-                  purchasedProducts(uu)(pp)(precoproduto(pp)) := purchasedProducts(uu)(pp)(precoproduto(pp)) + qq
-              ELSE
-                  purchasedProducts(uu)(pp) := purchasedProducts(uu)(pp) \/ {precoproduto(pp) |-> qq}
-              END
-          ELSE
-              purchasedProducts(uu) := purchasedProducts(uu) \/ {pp |-> {precoproduto(pp) |-> qq}}
-          END
-      END ||
-      creditousuario := creditousuario <+ {
-          uu |-> (creditousuario(uu) - (precoproduto(pp) * qq)),
-          dono~(pp) |-> (creditousuario(dono~(pp)) + (precoproduto(pp) * qq))
-      } ||
-      estoque(pp) := estoque(pp) - qq
+    THEN
+        lastPurchase(uu) := {pp |-> {precoproduto(pp) |-> qq}} ||
+        purchaseUsers := purchaseUsers \/ {uu |-> idPurchase} ||
+        purchaseHistory := purchaseHistory \/ {idPurchase |-> {pp |-> {precoproduto(pp) |-> qq}}} ||
+        lastPurchaseId := idPurchase ||
+	idPurchase := idPurchase + 1 ||
+         
+        creditousuario := creditousuario <+ {
+            uu |-> (creditousuario(uu) - (precoproduto(pp) * qq)),
+             dono~(pp) |-> (creditousuario(dono~(pp)) + (precoproduto(pp) * qq))
+        } ||
+        estoque(pp) := estoque(pp) - qq 
     END;
 
 
 returnProduct(uu, pp, rr, qq) =
   PRE
     uu : IDUSUARIO &
-    uu : dom(purchasedProducts) &
-    pp : dom(purchasedProducts(uu)) &
+    uu : dom(lastPurchase) &
+    pp : dom(lastPurchase(uu)) &
     rr : NAT &
     qq : NAT1 &
-    rr : dom(purchasedProducts(uu)(pp)) &
-    qq <= purchasedProducts(uu)(pp)(rr)
+    rr : dom(lastPurchase(uu)(pp)) &
+    qq <= lastPurchase(uu)(pp)(rr)
   THEN
     IF dono~(pp) : dom(dividausuario) THEN
-        dividausuario(dono~(pp)) := dividausuario(dono~(pp)) + (purchasedProducts(uu)(pp)(rr) * rr)
+        dividausuario(dono~(pp)) := dividausuario(dono~(pp)) + (lastPurchase(uu)(pp)(rr) * rr)
     ELSE
-        dividausuario := dividausuario \/ {dono~(pp) |-> purchasedProducts(uu)(pp)(rr) * rr}
+        dividausuario := dividausuario \/ {dono~(pp) |-> lastPurchase(uu)(pp)(rr) * rr}
     END ||
-    creditousuario(uu) := creditousuario(uu) + purchasedProducts(uu)(pp)(rr) * rr ||
-    IF qq = purchasedProducts(uu)(pp)(rr) THEN
-      IF card(purchasedProducts(uu)(pp)) <= 1 THEN
-           purchasedProducts(uu) := {pp} <<| purchasedProducts(uu)
+    creditousuario(uu) := creditousuario(uu) + lastPurchase(uu)(pp)(rr) * rr ||
+    IF qq = lastPurchase(uu)(pp)(rr) THEN
+      IF card(lastPurchase(uu)(pp)) <= 1 THEN
+           lastPurchase(uu) := {pp} <<| lastPurchase(uu) ||
+           purchaseHistory(max(purchaseUsers[{uu}])) := {pp} <<| lastPurchase(uu)
       ELSE
-          purchasedProducts(uu)(pp) := {rr} <<| purchasedProducts(uu)(pp)
+          lastPurchase(uu)(pp) := {rr} <<| lastPurchase(uu)(pp) ||
+          purchaseHistory( max(purchaseUsers[{uu}]) )(pp) := {rr} <<| purchaseHistory(max(purchaseUsers[{uu}]))(pp)
       END
     ELSE
-      purchasedProducts(uu)(pp)(rr) := purchasedProducts(uu)(pp)(rr) - qq
+      lastPurchase(uu)(pp)(rr) := lastPurchase(uu)(pp)(rr) - qq ||
+      purchaseHistory(max(purchaseUsers[{uu}]))(pp)(rr) := purchaseHistory(max(purchaseUsers[{uu}]))(pp)(rr) -qq
     END
     ||
     IF pp : dom(estoque) THEN
@@ -237,10 +248,10 @@ addProductToCart(uu, pp, qq) =
       uu : dom(usuarios) & 
       pp : dom(produtos) &
       uu /= dono~(pp) &
-      qq : NAT1 &
+      qq : NAT1 & 
       uu : dom(totalPriceCart) &
       precoproduto(pp) * qq <= creditousuario(uu) &
-      qq <= estoque(pp) 
+      qq <= estoque(pp)
     THEN 
       IF uu /: dom(cartContents) THEN
           cartContents(uu) := {pp |-> {precoproduto(pp) |-> qq}}
@@ -297,50 +308,15 @@ buyProductsFromCart(uu) =
         creditousuario(uu) >= totalPriceCart(uu)
     THEN
 	creditousuario(uu) := creditousuario(uu) - totalPriceCart(uu) ||
-	totalPriceCart(uu) := 0 ||
+        totalPriceCart(uu) := 0 ||
 	cartContents := {uu} <<| cartContents ||
-	IF uu : dom(purchasedProductsCart) THEN
-	    purchasedProductsCart(uu) := purchasedProductsCart(uu) \/ cartContents(uu)
-	ELSE
-	    purchasedProductsCart := purchasedProductsCart \/ {uu |-> cartContents(uu)}
-	END
-	
+        
+        lastPurchase(uu) := cartContents(uu) ||
+        purchaseUsers := purchaseUsers \/ {uu |-> idPurchase} ||
+        purchaseHistory := purchaseHistory \/ {idPurchase |-> cartContents(uu)} ||
+        lastPurchaseId := idPurchase ||
+	idPurchase := idPurchase + 1	
     END;
-
-returnProductBuyedCart(uu, pp, rr, qq) =
-  PRE
-    uu : IDUSUARIO &
-    uu : dom(purchasedProductsCart) &
-    pp : dom(purchasedProductsCart(uu)) &
-    rr : NAT &
-    qq : NAT1 &
-    rr : dom(purchasedProductsCart(uu)(pp)) &
-    qq <= purchasedProductsCart(uu)(pp)(rr)
-  THEN
-    IF dono~(pp) : dom(dividausuario) THEN
-        dividausuario(dono~(pp)) := dividausuario(dono~(pp)) + (purchasedProductsCart(uu)(pp)(rr) * rr)
-    ELSE
-        dividausuario := dividausuario \/ {dono~(pp) |-> purchasedProductsCart(uu)(pp)(rr) * rr}
-    END ||
-    creditousuario(uu) := creditousuario(uu) + purchasedProductsCart(uu)(pp)(rr) * rr ||
-    IF qq = purchasedProductsCart(uu)(pp)(rr) THEN
-      IF card(purchasedProductsCart(uu)(pp)) <= 1 THEN
-           purchasedProductsCart(uu) := {pp} <<| purchasedProductsCart(uu)
-      ELSE
-          purchasedProducts(uu)(pp) := {rr} <<| purchasedProducts(uu)(pp)
-      END
-    ELSE
-      purchasedProducts(uu)(pp)(rr) := purchasedProducts(uu)(pp)(rr) - qq
-    END
-    ||
-    IF pp : dom(estoque) THEN
-        estoque := estoque <+ {
-          pp |-> estoque(pp) + qq
-        }
-    ELSE
-        skip
-    END
-  END;
 
 payDebt(ii) = 
     PRE 
