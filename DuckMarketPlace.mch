@@ -24,7 +24,8 @@ VARIABLES
     lastPurchase,
     lastPurchaseId,
     purchaseUsers,
-    purchaseHistory
+    purchaseHistory,
+    cartSeller
     
 INVARIANT
     usuarios : IDUSUARIO +-> NOMEUSUARIO &
@@ -46,6 +47,7 @@ INVARIANT
     purchaseHistory : NAT <-> (IDPRODUTO <-> (NAT <-> NAT)) &
     idPurchase : NAT &
     lastPurchaseId : NAT &
+    cartSeller : IDUSUARIO <-> IDUSUARIO &
 
     userIdsUsed <: IDUSUARIO &
     dom(usuarios) <: userIdsUsed &
@@ -76,7 +78,8 @@ INITIALISATION
     lastPurchaseId := 0 ||
     lastPurchase := {} ||
     purchaseUsers := {} ||
-    purchaseHistory := {}
+    purchaseHistory := {} ||
+    cartSeller := {}
 
 OPERATIONS
 
@@ -251,8 +254,13 @@ addProductToCart(uu, pp, qq) =
       qq : NAT1 & 
       uu : dom(totalPriceCart) &
       precoproduto(pp) * qq <= creditousuario(uu) &
-      qq <= estoque(pp)
-    THEN 
+      qq <= estoque(pp) &
+      uu /: dom(cartSeller) or cartSeller(uu) = dono~(pp)
+    THEN
+      IF uu /: dom(cartSeller) THEN
+	cartSeller := cartSeller \/ {uu |-> dono~(pp)}
+      END ||
+
       IF uu /: dom(cartContents) THEN
           cartContents(uu) := {pp |-> {precoproduto(pp) |-> qq}}
       ELSE
@@ -283,7 +291,10 @@ removeProductFromCart(uu, pp, rr, qq) =
    IF qq = cartContents(uu)(pp)(rr) THEN
       totalPriceCart(uu) := totalPriceCart(uu) - (cartContents(uu)(pp)(rr) * rr) ||
       IF card(cartContents(uu)(pp)) <= 1 THEN
-           cartContents(uu) := {pp} <<| cartContents(uu)
+           cartContents(uu) := {pp} <<| cartContents(uu) ||
+	   IF dom(cartContents(uu)) = {pp} THEN
+		cartSeller := {uu} <<| cartSeller
+	   END
       ELSE
           cartContents(uu)(pp) := {rr} <<| cartContents(uu)(pp)
       END
@@ -315,7 +326,8 @@ buyProductsFromCart(uu) =
         purchaseUsers := purchaseUsers \/ {uu |-> idPurchase} ||
         purchaseHistory := purchaseHistory \/ {idPurchase |-> cartContents(uu)} ||
         lastPurchaseId := idPurchase ||
-	idPurchase := idPurchase + 1	
+	idPurchase := idPurchase + 1 ||
+	cartSeller := {uu} <<| cartSeller	
     END;
 
 payDebt(ii) = 
