@@ -253,9 +253,8 @@ addProductToCart(uu, pp, qq) =
       uu /= dono~(pp) &
       qq : NAT1 & 
       uu : dom(totalPriceCart) &
-      precoproduto(pp) * qq <= creditousuario(uu) &
       qq <= estoque(pp) &
-      uu /: dom(cartSeller) or cartSeller(uu) = dono~(pp)
+      (uu /: dom(cartSeller) or cartSeller(uu) = dono~(pp))
     THEN
       IF uu /: dom(cartSeller) THEN
 	cartSeller := cartSeller \/ {uu |-> dono~(pp)}
