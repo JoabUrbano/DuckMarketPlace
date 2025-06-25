@@ -372,14 +372,23 @@ removeInactiveUser(uu) =
     END;
 
 // Operações de query
+// Operações de query
 oo <-- showUserCredit(uu) =
-	oo := creditousuario(uu);
+    PRE uu : IDUSUARIO
+    THEN
+	oo := creditousuario(uu)
+    END;
 
 oo <-- showUserCartValue(uu) =
-	oo := totalPriceCart(uu);
+    PRE uu : IDUSUARIO
+    THEN
+	oo := totalPriceCart(uu)
+    END;
 
 oo <-- showUserDebt(uu) =
+    PRE uu : IDUSUARIO
+    THEN
 	oo := dividausuario(uu)
-
+    END
 
 END
