@@ -85,7 +85,7 @@ OPERATIONS
 
 addUser(uu, nn, cc) =
     PRE uu : IDUSUARIO & nn : NOMEUSUARIO & cc : NAT &
-        uu /: userIdsUsed 
+        uu /: userIdsUsed & uu /: dom(totalPriceCart)
     THEN 
         usuarios := usuarios \/ {uu |-> nn} ||
         creditousuario := creditousuario \/ {uu |-> cc} ||
@@ -372,21 +372,20 @@ removeInactiveUser(uu) =
     END;
 
 // Operações de query
-// Operações de query
 oo <-- showUserCredit(uu) =
-    PRE uu : IDUSUARIO
+    PRE uu : IDUSUARIO & uu : dom(creditousuario)
     THEN
 	oo := creditousuario(uu)
     END;
 
 oo <-- showUserCartValue(uu) =
-    PRE uu : IDUSUARIO
+    PRE uu : IDUSUARIO & uu : dom(totalPriceCart)
     THEN
 	oo := totalPriceCart(uu)
     END;
 
 oo <-- showUserDebt(uu) =
-    PRE uu : IDUSUARIO
+    PRE uu : IDUSUARIO & uu : dom(dividausuario)
     THEN
 	oo := dividausuario(uu)
     END
