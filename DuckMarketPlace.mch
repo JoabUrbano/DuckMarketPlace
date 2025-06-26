@@ -371,7 +371,7 @@ removeInactiveUser(uu) =
         usuariosinativos := {uu} <<| usuariosinativos
     END;
 
-// Operações de query
+/* ----- Operações de query ----- */
 oo <-- showUserCredit(uu) =
     PRE uu : IDUSUARIO & uu : dom(creditousuario)
     THEN
@@ -400,6 +400,16 @@ oo <-- showProductPrice(pp) =
     PRE pp : IDPRODUTO & pp : dom(precoproduto)
     THEN
 	oo := precoproduto(pp)
+    END;
+
+/* ----- Operações de pré condições ----- */
+oo <-- preAddUser(uu, nn, cc) =
+    PRE uu : IDUSUARIO & nn : NOMEUSUARIO & cc : NAT THEN
+	IF uu /: userIdsUsed & uu /: dom(totalPriceCart) THEN
+	    oo := TRUE
+	ELSE
+	    oo := FALSE
+	END      
     END
 
 END
