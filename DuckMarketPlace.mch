@@ -47,7 +47,7 @@ INVARIANT
     purchaseHistory : NAT <-> (IDPRODUTO <-> (NAT <-> NAT)) &
     idPurchase : NAT &
     lastPurchaseId : NAT &
-    cartSeller : IDUSUARIO <-> IDUSUARIO &
+    cartSeller : IDUSUARIO +-> IDUSUARIO &
 
     userIdsUsed <: IDUSUARIO &
     dom(usuarios) <: userIdsUsed &
@@ -388,6 +388,18 @@ oo <-- showUserDebt(uu) =
     PRE uu : IDUSUARIO & uu : dom(dividausuario)
     THEN
 	oo := dividausuario(uu)
+    END;
+
+oo <-- showProductStock(pp) =
+    PRE pp : IDPRODUTO & pp : dom(estoque)
+    THEN
+	oo := estoque(pp)
+    END;
+
+oo <-- showProductPrice(pp) =
+    PRE pp : IDPRODUTO & pp : dom(precoproduto)
+    THEN
+	oo := precoproduto(pp)
     END
 
 END
