@@ -281,6 +281,7 @@ addProductToCart(uu, pp, qq) =
 removeProductFromCart(uu, pp, rr, qq) =
   PRE
     uu : IDUSUARIO &
+    pp : IDPRODUTO &
     uu : dom(cartContents) &
     pp : dom(cartContents(uu)) &
     rr : NAT &
@@ -536,7 +537,83 @@ oo <-- preReturnProduct(uu, pp, rr, qq) =
     THEN oo := TRUE
     ELSE oo := FALSE
     END
-  END
+  END;
 
+oo <-- preAddProductToCart(uu, pp, qq) =
+    PRE uu : IDUSUARIO & pp : IDPRODUTO & qq : NAT THEN
+       IF uu : dom(usuarios) & 
+          pp : dom(produtos) &
+          uu /= dono~(pp) &
+          qq : NAT1 & 
+          uu : dom(totalPriceCart) &
+          qq <= estoque(pp) &
+          (uu /: dom(cartSeller) or cartSeller(uu) = dono~(pp))
+	THEN oo := TRUE
+        ELSE oo := FALSE
+        END
+    END;
+
+oo <-- preRemoveProductFromCart(uu, pp, rr, qq) =
+  PRE
+    uu : IDUSUARIO &
+    pp : IDPRODUTO &
+    rr : NAT &
+    qq : NAT
+  THEN
+    IF uu : dom(cartContents) &
+       pp : dom(cartContents(uu)) &
+       qq : NAT1 &
+       rr : dom(cartContents(uu)(pp)) &
+       qq <= cartContents(uu)(pp)(rr)
+    THEN oo := TRUE
+    ELSE oo := FALSE
+    END
+  END;
+
+oo <-- preBuyProductsFromCart(uu) =
+    PRE uu : IDUSUARIO THEN
+	IF uu : dom(cartContents) &
+           uu : dom(creditousuario) &
+	   uu : dom(totalPriceCart) &
+           creditousuario(uu) >= totalPriceCart(uu)
+	THEN oo := TRUE
+        ELSE oo := FALSE
+        END
+    END;
+
+oo <-- prePayDebt(ii) = 
+    PRE ii : IDUSUARIO THEN
+        IF
+            ii : dom(dividausuario) &
+            ii : dom(usuarios) &
+            ii : dom(creditousuario)
+	THEN oo := TRUE
+        ELSE oo := FALSE
+        END
+    END;
+
+oo <-- prePayDebtWithCredit(ii, cc) =
+    PRE ii : IDUSUARIO & cc : NAT THEN
+        IF ii : dom(dividausuario) & cc : NAT1 THEN
+	    oo := TRUE
+	ELSE oo := FALSE
+        END
+    END;
+    
+oo <-- preWithdrawInactiveCredit(uu) =
+    PRE uu : IDUSUARIO THEN 
+        IF uu : dom(usuariosinativos) & uu /: dom(dividausuario)
+	THEN oo := TRUE
+        ELSE oo := FALSE
+        END
+    END;
+    
+oo <-- preRemoveInactiveUser(uu) =
+    PRE uu : IDUSUARIO THEN 
+        IF uu : dom(usuariosinativos) & usuariosinativos(uu) <= 0
+	THEN oo := TRUE
+        ELSE oo := FALSE
+        END
+    END
 
 END
