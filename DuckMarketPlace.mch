@@ -188,6 +188,7 @@ buyProduct(uu, pp, qq) =
       uu : dom(usuarios) & 
       pp : dom(produtos) &
       uu /= dono~(pp) &
+      ( creditousuario(dono~(pp)) + (precoproduto(pp) * qq) ) : NAT &
       qq : NAT1 &
       precoproduto(pp) * qq <= creditousuario(uu) &
       qq <= estoque(pp) 
@@ -215,7 +216,11 @@ returnProduct(uu, pp, rr, qq) =
     rr : NAT &
     qq : NAT1 &
     rr : dom(lastPurchase(uu)(pp)) &
-    qq <= lastPurchase(uu)(pp)(rr)
+    qq <= lastPurchase(uu)(pp)(rr) &
+    ( creditousuario(uu) + lastPurchase(uu)(pp)(rr) * rr ) : NAT &
+    ( dono~(pp) : dom(dividausuario) =>
+	( dividausuario(dono~(pp)) + (lastPurchase(uu)(pp)(rr) * rr) ) : NAT ) &
+    ( dono~(pp) /: dom(dividausuario) => (lastPurchase(uu)(pp)(rr) * rr) : NAT )
   THEN
     IF dono~(pp) : dom(dividausuario) THEN
         dividausuario(dono~(pp)) := dividausuario(dono~(pp)) + (lastPurchase(uu)(pp)(rr) * rr)
@@ -514,6 +519,7 @@ oo <-- preBuyProduct(uu, pp, qq) =
         IF  uu : dom(usuarios) & 
       	    pp : dom(produtos) &
       	    uu /= dono~(pp) &
+	    ( creditousuario(dono~(pp)) + (precoproduto(pp) * qq) ) : NAT &
       	    qq : NAT1 &
       	    precoproduto(pp) * qq <= creditousuario(uu) &
       	    qq <= estoque(pp)
@@ -533,7 +539,13 @@ oo <-- preReturnProduct(uu, pp, rr, qq) =
         pp : dom(lastPurchase(uu)) &
         qq : NAT1 &
         rr : dom(lastPurchase(uu)(pp)) &
-        qq <= lastPurchase(uu)(pp)(rr)
+        qq <= lastPurchase(uu)(pp)(rr) &
+        ( creditousuario(uu) + lastPurchase(uu)(pp)(rr) * rr ) : NAT &
+        
+        ( dono~(pp) : dom(dividausuario) =>
+	( dividausuario(dono~(pp)) + (lastPurchase(uu)(pp)(rr) * rr) ) : NAT ) &
+        
+        ( dono~(pp) /: dom(dividausuario) => (lastPurchase(uu)(pp)(rr) * rr) : NAT )
     THEN oo := TRUE
     ELSE oo := FALSE
     END
