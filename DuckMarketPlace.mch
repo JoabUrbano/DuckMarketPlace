@@ -210,6 +210,7 @@ returnProduct(uu, pp, rr, qq) =
   PRE
     uu : IDUSUARIO &
     uu : dom(lastPurchase) &
+    pp : IDPRODUTO &
     pp : dom(lastPurchase(uu)) &
     rr : NAT &
     qq : NAT1 &
@@ -450,6 +451,92 @@ oo <-- preAddCredit(uu, cc) =
 	THEN oo := TRUE
 	ELSE oo := FALSE
 	END
+    END;
+
+
+oo <-- preWithdrawCredit(uu, cc) = 
+    PRE uu: IDUSUARIO & cc : NAT THEN
+	IF 
+	    cc : NAT1 & uu : dom(creditousuario) &
+	    ((creditousuario(uu) - cc) : NAT) &
+	    cc <= creditousuario(uu) &
+	    uu /: dom(dividausuario)
+	THEN oo := TRUE
+	ELSE oo := FALSE
+	END
+    END;
+
+oo <-- preAddProduct(ii, nn, uu) =
+    PRE ii : IDPRODUTO & nn : NOMEPRODUTO & uu : IDUSUARIO
+    THEN
+	IF ii /: dom(produtos) & ii /: ran(dono) & uu : dom(usuarios)
+	THEN oo := TRUE
+	ELSE oo := FALSE
+	END
+    END;
+
+oo <-- preRemoveProduct(ii) =
+   PRE ii : IDPRODUTO THEN 
+	IF ii : dom(produtos) THEN
+	    oo := TRUE
+	ELSE oo := FALSE
+	END
+   END;
+
+oo <-- preAltProductName(ii, nn) =
+    PRE ii : IDPRODUTO & nn : NOMEPRODUTO THEN
+	IF ii : dom(produtos) THEN
+	    oo := TRUE
+	ELSE oo := FALSE
+	END
+    END;
+
+oo <-- preAltProductStock(ii, qq) =
+    PRE ii : IDPRODUTO & qq : NAT THEN
+	IF ii : dom(produtos) THEN
+	    oo := TRUE
+	ELSE oo := FALSE
+	END
+    END;
+
+oo <-- preAltProductPrice(ii, pp) =
+    PRE ii : IDPRODUTO & pp : NAT THEN
+	IF ii : dom(produtos) THEN
+	    oo := TRUE
+	ELSE oo := FALSE
+	END
+    END;
+
+oo <-- preBuyProduct(uu, pp, qq) =
+    PRE uu : IDUSUARIO & pp : IDPRODUTO & qq : NAT
+    THEN
+        IF  uu : dom(usuarios) & 
+      	    pp : dom(produtos) &
+      	    uu /= dono~(pp) &
+      	    qq : NAT1 &
+      	    precoproduto(pp) * qq <= creditousuario(uu) &
+      	    qq <= estoque(pp)
+	THEN oo := TRUE
+	ELSE oo := FALSE
+	END
+    END;
+
+oo <-- preReturnProduct(uu, pp, rr, qq) =
+  PRE
+    uu : IDUSUARIO &
+    pp : IDPRODUTO &
+    rr : NAT &
+    qq : NAT
+  THEN
+    IF  uu : dom(lastPurchase) &
+        pp : dom(lastPurchase(uu)) &
+        qq : NAT1 &
+        rr : dom(lastPurchase(uu)(pp)) &
+        qq <= lastPurchase(uu)(pp)(rr)
+    THEN oo := TRUE
+    ELSE oo := FALSE
     END
+  END
+
 
 END
