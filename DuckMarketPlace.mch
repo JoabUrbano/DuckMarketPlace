@@ -422,6 +422,34 @@ oo <-- preAddUser(uu, nn, cc) =
 	ELSE
 	    oo := FALSE
 	END      
+    END;
+
+oo <-- preRemoveUser(uu) =
+    PRE uu : IDUSUARIO THEN
+	IF uu : dom(usuarios) &
+            uu : dom(creditousuario) &
+            uu /: dom(dividausuario)
+	THEN oo := TRUE
+	ELSE oo := FALSE
+	END
+    END;
+
+oo <-- preAltNameUser(uu, nn) =
+    PRE uu : IDUSUARIO & nn : NOMEUSUARIO THEN
+	IF uu : dom(usuarios) THEN
+	    oo := TRUE
+	ELSE 
+	    oo := FALSE
+	END
+    END;
+
+oo <-- preAddCredit(uu, cc) =
+    PRE uu: IDUSUARIO & cc : NAT THEN
+	IF cc : NAT1 & uu : dom(creditousuario) &
+	(creditousuario(uu) + cc) : NAT1
+	THEN oo := TRUE
+	ELSE oo := FALSE
+	END
     END
 
 END
