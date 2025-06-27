@@ -378,6 +378,12 @@ oo <-- showUserCredit(uu) =
 	oo := creditousuario(uu)
     END;
 
+oo <-- showUserName(uu) =
+    PRE uu : IDUSUARIO & uu : dom(usuarios)
+    THEN
+	oo := usuarios(uu)
+    END;
+
 oo <-- showUserCartValue(uu) =
     PRE uu : IDUSUARIO & uu : dom(totalPriceCart)
     THEN
@@ -388,6 +394,12 @@ oo <-- showUserDebt(uu) =
     PRE uu : IDUSUARIO & uu : dom(dividausuario)
     THEN
 	oo := dividausuario(uu)
+    END;
+
+oo <-- showProductName(pp) =
+    PRE pp : IDPRODUTO & pp : dom(produtos)
+    THEN
+	oo := produtos(pp)
     END;
 
 oo <-- showProductStock(pp) =
