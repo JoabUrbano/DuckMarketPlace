@@ -43,7 +43,7 @@ INVARIANT
     ownerCartProducts : IDUSUARIO +-> IDUSUARIO &
     
     lastPurchase : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
-    purchaseUsers : IDUSUARIO <-> NAT &
+    purchaseUsers : NAT +-> IDUSUARIO & 
     purchaseHistory : NAT <-> (IDPRODUTO <-> (NAT <-> NAT)) &
     idPurchase : NAT &
     lastPurchaseId : NAT &
@@ -108,8 +108,8 @@ removeUser(uu) =
         precoproduto := dono[{uu}] <<| precoproduto ||
 	 
         totalPriceCart := {uu} <<| totalPriceCart ||
-        purchaseHistory := purchaseUsers[{uu}] <<| purchaseHistory || 
-	purchaseUsers := {uu} <<| purchaseUsers ||
+        purchaseHistory := ( dom( purchaseUsers |> {uu} ) ) <<| purchaseHistory || 
+	purchaseUsers := purchaseUsers |>> {uu} ||
         cartContents := {uu} <<| cartContents ||
          
          
@@ -194,9 +194,9 @@ buyProduct(uu, pp, qq) =
       qq <= estoque(pp) 
     THEN
         lastPurchase(uu) := {pp |-> {precoproduto(pp) |-> qq}} ||
-        purchaseUsers := purchaseUsers \/ {uu |-> idPurchase} ||
+        purchaseUsers := purchaseUsers \/ {idPurchase |-> uu} ||
         purchaseHistory := purchaseHistory \/ {idPurchase |-> {pp |-> {precoproduto(pp) |-> qq}}} ||
-        lastPurchaseId := idPurchase ||
+        lastPurchaseId := idPurchase || 
 	idPurchase := idPurchase + 1 ||
          
         creditousuario := creditousuario <+ {
@@ -231,14 +231,14 @@ returnProduct(uu, pp, rr, qq) =
     IF qq = lastPurchase(uu)(pp)(rr) THEN
       IF card(lastPurchase(uu)(pp)) <= 1 THEN
            lastPurchase(uu) := {pp} <<| lastPurchase(uu) ||
-           purchaseHistory(max(purchaseUsers[{uu}])) := {pp} <<| lastPurchase(uu)
+           purchaseHistory(max( dom(purchaseUsers |> {uu}) )) := {pp} <<| lastPurchase(uu)
       ELSE
           lastPurchase(uu)(pp) := {rr} <<| lastPurchase(uu)(pp) ||
-          purchaseHistory( max(purchaseUsers[{uu}]) )(pp) := {rr} <<| purchaseHistory(max(purchaseUsers[{uu}]))(pp)
+          purchaseHistory( max( dom(purchaseUsers |> {uu}) ) )(pp) := {rr} <<| purchaseHistory( max( dom(purchaseUsers |> {uu}) ) )(pp)
       END
     ELSE
       lastPurchase(uu)(pp)(rr) := lastPurchase(uu)(pp)(rr) - qq ||
-      purchaseHistory(max(purchaseUsers[{uu}]))(pp)(rr) := purchaseHistory(max(purchaseUsers[{uu}]))(pp)(rr) -qq
+      purchaseHistory(max( dom(purchaseUsers |> {uu}) ))(pp)(rr) := purchaseHistory( max( dom(purchaseUsers |> {uu}) ) )(pp)(rr) -qq
     END
     ||
     IF pp : dom(estoque) THEN
@@ -331,7 +331,7 @@ buyProductsFromCart(uu) =
 	cartContents := {uu} <<| cartContents ||
         
         lastPurchase(uu) := cartContents(uu) ||
-        purchaseUsers := purchaseUsers \/ {uu |-> idPurchase} ||
+        purchaseUsers := purchaseUsers \/ {idPurchase |-> uu} ||
         purchaseHistory := purchaseHistory \/ {idPurchase |-> cartContents(uu)} ||
         lastPurchaseId := idPurchase ||
 	idPurchase := idPurchase + 1 ||
