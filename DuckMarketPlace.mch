@@ -260,7 +260,8 @@ addProductToCart(uu, pp, qq) =
       qq : NAT1 & 
       uu : dom(totalPriceCart) &
       qq <= estoque(pp) &
-      (uu /: dom(cartSeller) or cartSeller(uu) = dono~(pp))
+      (uu /: dom(cartSeller) or cartSeller(uu) = dono~(pp)) &
+      ( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) : NAT )
     THEN
       IF uu /: dom(cartSeller) THEN
 	cartSeller := cartSeller \/ {uu |-> dono~(pp)}
@@ -322,7 +323,8 @@ buyProductsFromCart(uu) =
     PRE uu : IDUSUARIO & uu : dom(cartContents) &
         uu : dom(creditousuario) &
 	uu : dom(totalPriceCart) &
-        creditousuario(uu) >= totalPriceCart(uu)
+        creditousuario(uu) >= totalPriceCart(uu) &
+        (idPurchase + 1) : NAT
     THEN
 	creditousuario(uu) := creditousuario(uu) - totalPriceCart(uu) ||
         totalPriceCart(uu) := 0 ||
@@ -559,7 +561,8 @@ oo <-- preAddProductToCart(uu, pp, qq) =
           qq : NAT1 & 
           uu : dom(totalPriceCart) &
           qq <= estoque(pp) &
-          (uu /: dom(cartSeller) or cartSeller(uu) = dono~(pp))
+          (uu /: dom(cartSeller) or cartSeller(uu) = dono~(pp)) &
+          ( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) : NAT )
 	THEN oo := TRUE
         ELSE oo := FALSE
         END
@@ -587,7 +590,8 @@ oo <-- preBuyProductsFromCart(uu) =
 	IF uu : dom(cartContents) &
            uu : dom(creditousuario) &
 	   uu : dom(totalPriceCart) &
-           creditousuario(uu) >= totalPriceCart(uu)
+           creditousuario(uu) >= totalPriceCart(uu)&
+	   (idPurchase + 1) : NAT
 	THEN oo := TRUE
         ELSE oo := FALSE
         END
