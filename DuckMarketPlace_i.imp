@@ -1,6 +1,59 @@
 IMPLEMENTATION DuckMarketPlace_i
-
 REFINES DuckMarketPlace
+VALUES
+    NOMEPRODUTO = 0..9;
+    IDPRODUTO = 0..9;
+    IDUSUARIO = 0..9;
+    NOMEUSUARIO = 0..9
 
-
+OPERATIONS
+    addUser(uu, nn, cc) = skip;
+    removeUser(uu) = skip;
+    altNameUser(uu, nn) = skip;
+    addCredit(uu, cc) = skip;
+    withdrawCredit(uu, cc) =  skip;
+    addProduct(ii, nn, uu) = skip;
+    removeProduct(ii)= skip;
+    altProductName(ii, nn) = skip;
+    altProductStock(ii, qq) = skip;
+    altProductPrice(ii, pp) = skip;
+    buyProduct(uu, pp, qq) = skip;
+    returnProduct(uu, pp, rr, qq) = skip;
+    addProductToCart(uu, pp, qq) = skip;
+    removeProductFromCart(uu, pp, rr, qq) = skip;
+    buyProductsFromCart(uu) = skip;
+    payDebt(ii) = skip;
+    payDebtWithCredit(ii, cc) = skip;
+    withdrawInactiveCredit(uu) = skip;
+    removeInactiveUser(uu) = skip;
+    
+    /* ----- Operações de query ----- */
+    oo <-- showUserCredit(uu) = skip;
+    oo <-- showUserName(uu) = skip;
+    oo <-- showUserCartValue(uu) = skip;
+    oo <-- showUserDebt(uu) = skip;
+    oo <-- showProductName(pp) = skip;
+    oo <-- showProductStock(pp) = skip;
+    oo <-- showProductPrice(pp) = skip;
+    
+    /* ----- Operações de pré condições ----- */
+    oo <-- preAddUser(uu, nn, cc) = skip;
+    oo <-- preRemoveUser(uu) = skip;
+    oo <-- preAltNameUser(uu, nn) = skip;
+    oo <-- preAddCredit(uu, cc) = skip;
+    oo <-- preWithdrawCredit(uu, cc) =  skip;
+    oo <-- preAddProduct(ii, nn, uu) = skip;
+    oo <-- preRemoveProduct(ii) = skip;
+    oo <-- preAltProductName(ii, nn) = skip;
+    oo <-- preAltProductStock(ii, qq) = skip;
+    oo <-- preAltProductPrice(ii, pp) = skip;
+    oo <-- preBuyProduct(uu, pp, qq) = skip;
+    oo <-- preReturnProduct(uu, pp, rr, qq) = skip;
+    oo <-- preAddProductToCart(uu, pp, qq) = skip;
+    oo <-- preRemoveProductFromCart(uu, pp, rr, qq) = skip;
+    oo <-- preBuyProductsFromCart(uu) = skip;
+    oo <-- prePayDebt(ii) =  skip;
+    oo <-- prePayDebtWithCredit(ii, cc) = skip;
+    oo <-- preWithdrawInactiveCredit(uu) = skip;
+    oo <-- preRemoveInactiveUser(uu) = skip
  END
