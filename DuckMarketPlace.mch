@@ -166,7 +166,6 @@ addProduct(ii, nn, uu) =
 removeProduct(ii)=
    PRE ii : IDPRODUTO & ii : dom(produtos)
    THEN produtos := {ii} <<| produtos ||
-        dono := {} <<| dono ||
         estoque := {ii} <<| estoque ||
         precoproduto := {ii} <<| precoproduto
    END;
