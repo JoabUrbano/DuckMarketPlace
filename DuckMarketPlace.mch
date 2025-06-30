@@ -42,7 +42,7 @@ INVARIANT
     estoque : IDPRODUTO +-> NAT & 
     precoproduto : IDPRODUTO +-> NAT & 
     
-    dono : IDUSUARIO <-> IDPRODUTO & 
+    dono : IDPRODUTO +-> IDUSUARIO & 
     cartContents : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
     totalPriceCart : IDUSUARIO +-> NAT &
     ownerCartProducts : IDUSUARIO +-> IDUSUARIO &
@@ -57,11 +57,11 @@ INVARIANT
     userIdsUsed <: IDUSUARIO &
     dom(usuarios) <: userIdsUsed &
     dom(usuariosinativos) <: userIdsUsed &
-    dom(dono) <: userIdsUsed &
+    ran(dono) <: userIdsUsed &
     dom(creditousuario) <: userIdsUsed &
 
     dom(usuarios) /\ dom(usuariosinativos) = {} &
-    dom(produtos) <: ran(dono)
+    dom(produtos) <: dom(dono)
 
 INITIALISATION
     usuarios := {} ||
@@ -108,9 +108,9 @@ removeUser(uu) =
     THEN 
         usuarios := {uu} <<| usuarios ||
          
-        produtos := dono[{uu}] <<| produtos ||
-        estoque := dono[{uu}] <<| estoque ||
-        precoproduto := dono[{uu}] <<| precoproduto ||
+        produtos := dom(dono |> {uu}) <<| produtos ||
+        estoque := dom(dono |> {uu}) <<| estoque ||
+        precoproduto := dom(dono |> {uu}) <<| precoproduto ||
 	 
         totalPriceCart := {uu} <<| totalPriceCart ||
         purchaseHistory := ( dom( purchaseUsers |> {uu} ) ) <<| purchaseHistory || 
@@ -157,16 +157,15 @@ withdrawCredit(uu, cc) =
 addProduct(ii, nn, uu) =
     PRE ii : IDPRODUTO & nn : NOMEPRODUTO &
 	uu : IDUSUARIO & ii /: dom(produtos) &
-	ii /: ran(dono) &
+	ii /: dom(dono) &
 	uu : dom(usuarios)
     THEN produtos := produtos \/ {ii |-> nn} ||
-         dono := dono \/ {uu |-> ii}
+         dono := dono \/ {ii |-> uu}
     END;
 
 removeProduct(ii)=
    PRE ii : IDPRODUTO & ii : dom(produtos)
    THEN produtos := {ii} <<| produtos ||
-        dono := dono |>> {ii} ||
         estoque := {ii} <<| estoque ||
         precoproduto := {ii} <<| precoproduto
    END;
@@ -192,9 +191,9 @@ buyProduct(uu, pp, qq) =
       pp : IDPRODUTO & 
       uu : dom(usuarios) & 
       pp : dom(produtos) &
-      uu /= dono~(pp) &
+      uu /= dono(pp) &
       qq : NAT1 &
-      ( creditousuario(dono~(pp)) + (precoproduto(pp) * qq) ) : NAT &
+      ( creditousuario(dono(pp)) + (precoproduto(pp) * qq) ) : NAT &
       precoproduto(pp) * qq <= creditousuario(uu) &
       qq <= estoque(pp) 
     THEN
@@ -206,7 +205,7 @@ buyProduct(uu, pp, qq) =
          
         creditousuario := creditousuario <+ {
             uu |-> (creditousuario(uu) - (precoproduto(pp) * qq)),
-             dono~(pp) |-> (creditousuario(dono~(pp)) + (precoproduto(pp) * qq))
+             dono(pp) |-> (creditousuario(dono(pp)) + (precoproduto(pp) * qq))
         } ||
         estoque(pp) := estoque(pp) - qq 
     END;
@@ -222,14 +221,14 @@ returnProduct(uu, pp, rr, qq) =
     rr : dom(lastPurchase(uu)(pp)) &
     qq <= lastPurchase(uu)(pp)(rr) &
     ( creditousuario(uu) + lastPurchase(uu)(pp)(rr) * rr ) : NAT &
-    ( dono~(pp) : dom(dividausuario) =>
-	( dividausuario(dono~(pp)) + (lastPurchase(uu)(pp)(rr) * rr) ) : NAT ) &
-    ( dono~(pp) /: dom(dividausuario) => (lastPurchase(uu)(pp)(rr) * rr) : NAT )
+    ( dono(pp) : dom(dividausuario) =>
+	( dividausuario(dono(pp)) + (lastPurchase(uu)(pp)(rr) * rr) ) : NAT ) &
+    ( dono(pp) /: dom(dividausuario) => (lastPurchase(uu)(pp)(rr) * rr) : NAT )
   THEN
-    IF dono~(pp) : dom(dividausuario) THEN
-        dividausuario(dono~(pp)) := dividausuario(dono~(pp)) + (lastPurchase(uu)(pp)(rr) * rr)
+    IF dono(pp) : dom(dividausuario) THEN
+        dividausuario(dono(pp)) := dividausuario(dono(pp)) + (lastPurchase(uu)(pp)(rr) * rr)
     ELSE
-        dividausuario := dividausuario \/ {dono~(pp) |-> lastPurchase(uu)(pp)(rr) * rr}
+        dividausuario := dividausuario \/ {dono(pp) |-> lastPurchase(uu)(pp)(rr) * rr}
     END ||
     creditousuario(uu) := creditousuario(uu) + lastPurchase(uu)(pp)(rr) * rr ||
     IF qq = lastPurchase(uu)(pp)(rr) THEN
@@ -261,15 +260,15 @@ addProductToCart(uu, pp, qq) =
       pp : IDPRODUTO & 
       uu : dom(usuarios) & 
       pp : dom(produtos) &
-      uu /= dono~(pp) &
+      uu /= dono(pp) &
       qq : NAT1 & 
       uu : dom(totalPriceCart)  &
       qq <= estoque(pp) &
-      (uu /: dom(cartSeller) or cartSeller(uu) = dono~(pp)) &
+      (uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
 ( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) : NAT )
     THEN
       IF uu /: dom(cartSeller) THEN
-	cartSeller := cartSeller \/ {uu |-> dono~(pp)}
+	cartSeller := cartSeller \/ {uu |-> dono(pp)}
       END ||
 
       IF uu /: dom(cartContents) THEN
@@ -482,7 +481,7 @@ oo <-- preWithdrawCredit(uu, cc) =
 oo <-- preAddProduct(ii, nn, uu) =
     PRE ii : IDPRODUTO & nn : NOMEPRODUTO & uu : IDUSUARIO
     THEN
-	IF ii /: dom(produtos) & ii /: ran(dono) & uu : dom(usuarios)
+	IF ii /: dom(produtos) & ii /: dom(dono) & uu : dom(usuarios)
 	THEN oo := TRUE
 	ELSE oo := FALSE
 	END
@@ -525,8 +524,8 @@ oo <-- preBuyProduct(uu, pp, qq) =
     THEN
         IF  uu : dom(usuarios) & 
       	    pp : dom(produtos) &
-      	    uu /= dono~(pp) &
-	    ( creditousuario(dono~(pp)) + (precoproduto(pp) * qq) ) : NAT &
+      	    uu /= dono(pp) &
+	    ( creditousuario(dono(pp)) + (precoproduto(pp) * qq) ) : NAT &
       	    qq : NAT1 &
       	    precoproduto(pp) * qq <= creditousuario(uu) &
       	    qq <= estoque(pp)
@@ -549,10 +548,10 @@ oo <-- preReturnProduct(uu, pp, rr, qq) =
         qq <= lastPurchase(uu)(pp)(rr) &
         ( creditousuario(uu) + lastPurchase(uu)(pp)(rr) * rr ) : NAT &
         
-        ( dono~(pp) : dom(dividausuario) =>
-	( dividausuario(dono~(pp)) + (lastPurchase(uu)(pp)(rr) * rr) ) : NAT ) &
+        ( dono(pp) : dom(dividausuario) =>
+	( dividausuario(dono(pp)) + (lastPurchase(uu)(pp)(rr) * rr) ) : NAT ) &
         
-        ( dono~(pp) /: dom(dividausuario) => (lastPurchase(uu)(pp)(rr) * rr) : NAT )
+        ( dono(pp) /: dom(dividausuario) => (lastPurchase(uu)(pp)(rr) * rr) : NAT )
     THEN oo := TRUE
     ELSE oo := FALSE
     END
@@ -562,11 +561,11 @@ oo <-- preAddProductToCart(uu, pp, qq) =
     PRE uu : IDUSUARIO & pp : IDPRODUTO & qq : NAT THEN
        IF uu : dom(usuarios) & 
           pp : dom(produtos) &
-          uu /= dono~(pp) &
+          uu /= dono(pp) &
           qq : NAT1 & 
           uu : dom(totalPriceCart) &
           qq <= estoque(pp) &
-          (uu /: dom(cartSeller) or cartSeller(uu) = dono~(pp)) &
+          (uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
           ( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) : NAT )
 	THEN oo := TRUE
         ELSE oo := FALSE
