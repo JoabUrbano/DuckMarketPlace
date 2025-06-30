@@ -1,8 +1,13 @@
-MACHINE
-    DuckMarketPlace
+MACHINE DuckMarketPlace
 
 SETS
     NOMEPRODUTO; NOMEUSUARIO; IDUSUARIO; IDPRODUTO
+
+CONSTANTS
+    userDummy
+    
+PROPERTIES
+    userDummy:NOMEUSUARIO
     
 VARIABLES
     usuarios,
@@ -85,7 +90,7 @@ OPERATIONS
 
 addUser(uu, nn, cc) =
     PRE uu : IDUSUARIO & nn : NOMEUSUARIO & cc : NAT &
-        uu /: userIdsUsed & uu /: dom(totalPriceCart)
+        uu /: userIdsUsed & uu /: dom(totalPriceCart) & nn /= userDummy
     THEN 
         usuarios := usuarios \/ {uu |-> nn} ||
         creditousuario := creditousuario \/ {uu |-> cc} ||
@@ -177,7 +182,7 @@ altProductStock(ii, qq) =
     END;
 
 altProductPrice(ii, pp) =
-    PRE ii : IDPRODUTO & ii : dom(produtos) & pp : NAT1
+    PRE ii : IDPRODUTO & ii : dom(produtos) & pp : NAT1 & pp <= MAXINT
     THEN precoproduto := precoproduto <+ {ii |-> pp}
     END;
 
@@ -188,8 +193,8 @@ buyProduct(uu, pp, qq) =
       uu : dom(usuarios) & 
       pp : dom(produtos) &
       uu /= dono~(pp) &
-      ( creditousuario(dono~(pp)) + (precoproduto(pp) * qq) ) : NAT &
       qq : NAT1 &
+      ( creditousuario(dono~(pp)) + (precoproduto(pp) * qq) ) : NAT &
       precoproduto(pp) * qq <= creditousuario(uu) &
       qq <= estoque(pp) 
     THEN
@@ -205,7 +210,6 @@ buyProduct(uu, pp, qq) =
         } ||
         estoque(pp) := estoque(pp) - qq 
     END;
-
 
 returnProduct(uu, pp, rr, qq) =
   PRE
@@ -250,6 +254,7 @@ returnProduct(uu, pp, rr, qq) =
     END
   END;
 
+
 addProductToCart(uu, pp, qq) =
     PRE
       uu : IDUSUARIO & 
@@ -258,10 +263,10 @@ addProductToCart(uu, pp, qq) =
       pp : dom(produtos) &
       uu /= dono~(pp) &
       qq : NAT1 & 
-      uu : dom(totalPriceCart) &
+      uu : dom(totalPriceCart)  &
       qq <= estoque(pp) &
       (uu /: dom(cartSeller) or cartSeller(uu) = dono~(pp)) &
-      ( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) : NAT )
+( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) : NAT )
     THEN
       IF uu /: dom(cartSeller) THEN
 	cartSeller := cartSeller \/ {uu |-> dono~(pp)}
@@ -426,7 +431,7 @@ oo <-- showProductPrice(pp) =
 /* ----- Operações de pré condições ----- */
 oo <-- preAddUser(uu, nn, cc) =
     PRE uu : IDUSUARIO & nn : NOMEUSUARIO & cc : NAT THEN
-	IF uu /: userIdsUsed & uu /: dom(totalPriceCart) THEN
+	IF uu /: userIdsUsed & uu /: dom(totalPriceCart) & nn /= userDummy THEN
 	    oo := TRUE
 	ELSE
 	    oo := FALSE

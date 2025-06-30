@@ -1,13 +1,45 @@
 IMPLEMENTATION DuckMarketPlace_i
+    
 REFINES DuckMarketPlace
+    
 VALUES
     NOMEPRODUTO = 0..9;
     IDPRODUTO = 0..9;
     IDUSUARIO = 0..9;
-    NOMEUSUARIO = 0..9
+    NOMEUSUARIO = 0..9;
+    userDummy = 0
+    
+CONCRETE_VARIABLES
+    usuarios_i,
+    creditousuario_i,
+    totalPriceCart_i,
+    userIdsUsed_i
+    
+INVARIANT
+    usuarios_i : IDUSUARIO --> NOMEUSUARIO &
+    dom(usuarios_i |>> {userDummy}) = dom(usuarios) &
+    creditousuario_i : IDUSUARIO --> NAT &
+    dom(creditousuario_i |>> {0}) = dom(creditousuario) &
+    totalPriceCart_i : IDUSUARIO --> NAT &
+    dom(totalPriceCart_i |>> {0}) = dom(totalPriceCart) &
+    userIdsUsed_i : IDUSUARIO --> BOOL &
+    dom(userIdsUsed_i |> {TRUE}) = userIdsUsed
+    
+INITIALISATION
+    usuarios_i := IDUSUARIO*{userDummy};
+    creditousuario_i := IDUSUARIO*{0};
+    totalPriceCart_i := IDUSUARIO*{0};
+    userIdsUsed_i := IDUSUARIO*{FALSE}
 
 OPERATIONS
-    addUser(uu, nn, cc) = skip;
+    addUser(uu, nn, cc) = 
+        BEGIN
+            usuarios_i(uu) :=  nn;
+            creditousuario_i(uu) := cc;
+            totalPriceCart_i(uu) :=  0;
+            userIdsUsed_i(uu) := TRUE
+        END;
+        
     removeUser(uu) = skip;
     altNameUser(uu, nn) = skip;
     addCredit(uu, cc) = skip;
@@ -37,7 +69,15 @@ OPERATIONS
     oo <-- showProductPrice(pp) = skip;
     
     /* ----- Operações de pré condições ----- */
-    oo <-- preAddUser(uu, nn, cc) = skip;
+    oo <-- preAddUser(uu, nn, cc) = 
+        VAR isUsed IN
+            isUsed := userIdsUsed_i(uu);
+            IF  isUsed = FALSE & uu /= userDummy THEN
+                oo := TRUE
+            ELSE 
+                oo := FALSE
+            END
+        END;        
     oo <-- preRemoveUser(uu) = skip;
     oo <-- preAltNameUser(uu, nn) = skip;
     oo <-- preAddCredit(uu, cc) = skip;
