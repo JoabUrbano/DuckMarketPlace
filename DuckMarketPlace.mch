@@ -4,10 +4,12 @@ SETS
     NOMEPRODUTO; NOMEUSUARIO; IDUSUARIO; IDPRODUTO
 
 CONSTANTS
-    userDummy
+    userDummy, productDummy, userIdDummy
     
 PROPERTIES
-    userDummy:NOMEUSUARIO
+    userDummy:NOMEUSUARIO &
+    productDummy:NOMEPRODUTO &
+    userIdDummy:IDUSUARIO
     
 VARIABLES
     usuarios,

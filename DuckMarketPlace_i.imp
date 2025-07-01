@@ -16,23 +16,40 @@ CONCRETE_VARIABLES
     creditousuario_actived_i ,
 
     totalPriceCart_i,
-    userIdsUsed_i
+    userIdsUsed_i,
+
+    produtos_i,
+    precoproduto_i,
+    estoque_i,
+    dono_i
     
 INVARIANT
     usuarios_i : IDUSUARIO --> NOMEUSUARIO &
     dom(usuarios_i |>> {userDummy}) = dom(usuarios) &
     
-    creditousuario_i : IDUSUARIO --> NAT &
+    creditousuario_i : IDUSUARIO --> NATURAL &
     //dom(creditousuario_i |>> {0}) = dom(creditousuario) &
     creditousuario_actived_i : IDUSUARIO --> BOOL &
     dom( creditousuario_actived_i |> {TRUE} ) /\ dom(creditousuario_i) = dom(creditousuario) &
-    //dom( creditousuario_actived_i |> {TRUE} ) = dom(creditousuario) &
-    
-    totalPriceCart_i : IDUSUARIO --> NAT &
+ 
+    totalPriceCart_i : IDUSUARIO --> NATURAL &
     dom(totalPriceCart_i |>> {0}) = dom(totalPriceCart) &
     
     userIdsUsed_i : IDUSUARIO --> BOOL &
-    dom(userIdsUsed_i |> {TRUE}) = userIdsUsed
+    dom(userIdsUsed_i |> {TRUE}) = userIdsUsed &
+
+    /* ----- Produtos ----- */
+    produtos_i : IDPRODUTO --> NOMEPRODUTO &
+    dom(produtos_i |>> {productDummy}) = dom(produtos) &
+
+    precoproduto_i : IDPRODUTO --> NATURAL &
+    dom(precoproduto_i) /\ dom(produtos_i |>> {productDummy}) = dom(precoproduto) &
+    
+    estoque_i : IDPRODUTO --> NATURAL &
+    dom(estoque_i) /\ dom(produtos_i |>> {productDummy}) = dom(estoque) &
+
+    dono_i : IDPRODUTO --> IDUSUARIO &
+    dom(dono_i |>> {userIdDummy}) = dom(dono)
     
 INITIALISATION
     usuarios_i := IDUSUARIO*{userDummy};
@@ -41,7 +58,12 @@ INITIALISATION
     creditousuario_actived_i := IDUSUARIO*{FALSE};
 
     totalPriceCart_i := IDUSUARIO*{0};
-    userIdsUsed_i := IDUSUARIO*{FALSE}
+    userIdsUsed_i := IDUSUARIO*{FALSE};
+
+    produtos_i := IDPRODUTO*{productDummy};
+    precoproduto_i := IDPRODUTO*{0};
+    estoque_i := IDPRODUTO*{0};
+    dono_i := IDPRODUTO*{userIdDummy}
 
 OPERATIONS
 
@@ -68,8 +90,21 @@ addCredit(uu, cc) =
 	END
     END;
 
-    withdrawCredit(uu, cc) =  skip;
-    addProduct(ii, nn, uu, qq, pp) = skip;
+withdrawCredit(uu, cc) = 
+    BEGIN
+    	IF creditousuario_actived_i(uu) = TRUE THEN
+	    creditousuario_i(uu) := creditousuario_i(uu) - cc
+	END
+    END;
+
+addProduct(ii, nn, uu, qq, pp) = 
+	BEGIN
+	    produtos_i(ii) := nn ||
+	    dono_i(ii) := uu ||
+	    estoque_i(ii) := qq ||
+	    precoproduto_i(ii) := pp
+	END;
+
     removeProduct(ii)= skip;
     altProductName(ii, nn) = skip;
     altProductStock(ii, qq) = skip;
