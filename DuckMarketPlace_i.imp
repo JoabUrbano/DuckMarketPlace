@@ -11,7 +11,10 @@ VALUES
     
 CONCRETE_VARIABLES
     usuarios_i,
+
     creditousuario_i,
+    creditousuario_actived_i ,
+
     totalPriceCart_i,
     userIdsUsed_i
     
@@ -20,7 +23,10 @@ INVARIANT
     dom(usuarios_i |>> {userDummy}) = dom(usuarios) &
     
     creditousuario_i : IDUSUARIO --> NAT &
-    dom(creditousuario_i |>> {0}) = dom(creditousuario) &
+    //dom(creditousuario_i |>> {0}) = dom(creditousuario) &
+    creditousuario_actived_i : IDUSUARIO --> BOOL &
+    dom( creditousuario_actived_i |> {TRUE} ) /\ dom(creditousuario_i) = dom(creditousuario) &
+    //dom( creditousuario_actived_i |> {TRUE} ) = dom(creditousuario) &
     
     totalPriceCart_i : IDUSUARIO --> NAT &
     dom(totalPriceCart_i |>> {0}) = dom(totalPriceCart) &
@@ -30,22 +36,33 @@ INVARIANT
     
 INITIALISATION
     usuarios_i := IDUSUARIO*{userDummy};
+
     creditousuario_i := IDUSUARIO*{0};
+    creditousuario_actived_i := IDUSUARIO*{FALSE};
+
     totalPriceCart_i := IDUSUARIO*{0};
     userIdsUsed_i := IDUSUARIO*{FALSE}
 
 OPERATIONS
-    addUser(uu, nn, cc) = 
+addUser(uu, nn, cc) = 
         BEGIN
             usuarios_i(uu) :=  nn;
             creditousuario_i(uu) := cc;
+	    creditousuario_actived_i(uu) := TRUE;
             totalPriceCart_i(uu) :=  0;
             userIdsUsed_i(uu) := TRUE
         END;
         
     removeUser(uu) = skip;
     altNameUser(uu, nn) = skip;
-    addCredit(uu, cc) = skip;
+
+addCredit(uu, cc) =
+    BEGIN
+	IF creditousuario_actived_i(uu) = TRUE THEN
+    	    creditousuario_i(uu) := creditousuario_i(uu) + cc
+	END
+    END;
+
     withdrawCredit(uu, cc) =  skip;
     addProduct(ii, nn, uu, qq, pp) = skip;
     removeProduct(ii)= skip;
