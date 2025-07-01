@@ -117,6 +117,7 @@ removeUser(uu) =
 	purchaseUsers := purchaseUsers |>> {uu} ||
         cartContents := {uu} <<| cartContents ||
 	lastPurchase := {uu} <<| lastPurchase ||
+	cartSeller := {uu} <<| cartSeller ||
          
          
         IF creditousuario(uu) > 0 THEN
