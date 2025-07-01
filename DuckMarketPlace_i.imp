@@ -67,37 +67,37 @@ INITIALISATION
 
 OPERATIONS
 
-addUser(uu, nn, cc) = 
-    BEGIN
-        usuarios_i(uu) :=  nn;
-        creditousuario_i(uu) := cc;
-	creditousuario_actived_i(uu) := TRUE;
-        totalPriceCart_i(uu) :=  0;
-        userIdsUsed_i(uu) := TRUE
-    END;
+    addUser(uu, nn, cc) = 
+        BEGIN
+            usuarios_i(uu) :=  nn;
+            creditousuario_i(uu) := cc;
+	    creditousuario_actived_i(uu) := TRUE;
+            totalPriceCart_i(uu) :=  0;
+            userIdsUsed_i(uu) := TRUE
+        END;
         
     removeUser(uu) = skip;
 
-altNameUser(uu, nn) =
-    BEGIN
-    	usuarios_i(uu) := nn
-    END;
+    altNameUser(uu, nn) =
+        BEGIN
+    	    usuarios_i(uu) := nn
+        END;
 
-addCredit(uu, cc) =
-    BEGIN
-	IF creditousuario_actived_i(uu) = TRUE THEN
-    	    creditousuario_i(uu) := creditousuario_i(uu) + cc
-	END
-    END;
+    addCredit(uu, cc) =
+        BEGIN
+	    IF creditousuario_actived_i(uu) = TRUE THEN
+    	        creditousuario_i(uu) := creditousuario_i(uu) + cc
+	    END
+        END;
 
-withdrawCredit(uu, cc) = 
-    BEGIN
-    	IF creditousuario_actived_i(uu) = TRUE THEN
-	    creditousuario_i(uu) := creditousuario_i(uu) - cc
-	END
-    END;
+    withdrawCredit(uu, cc) = 
+        BEGIN
+    	    IF creditousuario_actived_i(uu) = TRUE THEN
+	        creditousuario_i(uu) := creditousuario_i(uu) - cc
+	    END
+        END;
 
-addProduct(ii, nn, uu, qq, pp) = 
+    addProduct(ii, nn, uu, qq, pp) = 
 	BEGIN
 	    produtos_i(ii) := nn ||
 	    dono_i(ii) := uu ||
@@ -120,18 +120,39 @@ addProduct(ii, nn, uu, qq, pp) =
     removeInactiveUser(uu) = skip;
     
     /* ----- Operações de query ----- */
-    oo <-- showUserCredit(uu) = skip;
+    oo <-- showUserCredit(uu) =
+	BEGIN
+	    IF usuarios_i(uu) /= userDummy THEN
+		oo := creditousuario_i(uu)
+	    END
+	END;
     oo <-- showUserName(uu) = 
 	BEGIN
 	    IF usuarios_i(uu) /= userDummy THEN
 		oo := usuarios_i(uu)
 	    END
 	END;
+	//Falta fazer ainda!!!!
     oo <-- showUserCartValue(uu) = skip;
     oo <-- showUserDebt(uu) = skip;
-    oo <-- showProductName(pp) = skip;
-    oo <-- showProductStock(pp) = skip;
-    oo <-- showProductPrice(pp) = skip;
+    oo <-- showProductName(pp) =
+	BEGIN
+	    IF produtos_i(pp) /= productDummy THEN
+		oo := produtos_i(pp)
+	    END
+	END;
+    oo <-- showProductStock(pp) =
+	BEGIN
+	    IF produtos_i(pp) /= productDummy THEN
+		oo := estoque_i(pp)
+	    END
+	END;
+    oo <-- showProductPrice(pp) =
+	BEGIN
+	    IF produtos_i(pp) /= productDummy THEN
+		oo := precoproduto_i(pp)
+	    END
+	END;
     
     /* ----- Operações de pré condições ----- */
     oo <-- preAddUser(uu, nn, cc) = 
