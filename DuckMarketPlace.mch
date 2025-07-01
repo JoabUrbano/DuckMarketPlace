@@ -116,6 +116,7 @@ removeUser(uu) =
         purchaseHistory := ( dom( purchaseUsers |> {uu} ) ) <<| purchaseHistory || 
 	purchaseUsers := purchaseUsers |>> {uu} ||
         cartContents := {uu} <<| cartContents ||
+	lastPurchase := {uu} <<| lastPurchase ||
          
          
         IF creditousuario(uu) > 0 THEN
@@ -139,7 +140,7 @@ addCredit(uu, cc) =
 	uu: IDUSUARIO &
 	cc : NAT1 &
 	uu : dom(creditousuario) &
-	(creditousuario(uu) + cc) : NAT1
+	(creditousuario(uu) + cc) <= MAXINT
     THEN creditousuario(uu) := creditousuario(uu) + cc
     END;
     
@@ -154,13 +155,16 @@ withdrawCredit(uu, cc) =
     THEN creditousuario := creditousuario <+ {uu |-> creditousuario(uu) - cc}
     END;
 
-addProduct(ii, nn, uu) =
+addProduct(ii, nn, uu, qq, pp) =
     PRE ii : IDPRODUTO & nn : NOMEPRODUTO &
 	uu : IDUSUARIO & ii /: dom(produtos) &
+	qq: NAT & pp : NAT &
 	ii /: dom(dono) &
 	uu : dom(usuarios)
     THEN produtos := produtos \/ {ii |-> nn} ||
-         dono := dono \/ {ii |-> uu}
+         dono := dono \/ {ii |-> uu} ||
+	 estoque := estoque \/ {ii |-> qq} ||
+         precoproduto := precoproduto \/ {ii |-> pp}
     END;
 
 removeProduct(ii)=
@@ -193,7 +197,7 @@ buyProduct(uu, pp, qq) =
       pp : dom(produtos) &
       uu /= dono(pp) &
       qq : NAT1 &
-      ( creditousuario(dono(pp)) + (precoproduto(pp) * qq) ) : NAT &
+      ( creditousuario(dono(pp)) + (precoproduto(pp) * qq) ) <= MAXINT &
       precoproduto(pp) * qq <= creditousuario(uu) &
       qq <= estoque(pp) 
     THEN
@@ -220,10 +224,11 @@ returnProduct(uu, pp, rr, qq) =
     qq : NAT1 &
     rr : dom(lastPurchase(uu)(pp)) &
     qq <= lastPurchase(uu)(pp)(rr) &
-    ( creditousuario(uu) + lastPurchase(uu)(pp)(rr) * rr ) : NAT &
+    (pp : dom(estoque) => ( qq + estoque(pp) ) <= MAXINT) &
+    ( creditousuario(uu) + lastPurchase(uu)(pp)(rr) * rr ) <= MAXINT &
     ( dono(pp) : dom(dividausuario) =>
-	( dividausuario(dono(pp)) + (lastPurchase(uu)(pp)(rr) * rr) ) : NAT ) &
-    ( dono(pp) /: dom(dividausuario) => (lastPurchase(uu)(pp)(rr) * rr) : NAT )
+	( dividausuario(dono(pp)) + (lastPurchase(uu)(pp)(rr) * rr) ) <= MAXINT ) &
+    ( dono(pp) /: dom(dividausuario) => (lastPurchase(uu)(pp)(rr) * rr) <= MAXINT )
   THEN
     IF dono(pp) : dom(dividausuario) THEN
         dividausuario(dono(pp)) := dividausuario(dono(pp)) + (lastPurchase(uu)(pp)(rr) * rr)
@@ -264,8 +269,9 @@ addProductToCart(uu, pp, qq) =
       qq : NAT1 & 
       uu : dom(totalPriceCart)  &
       qq <= estoque(pp) &
+      (cartContents(uu)(pp)(precoproduto(pp)) + qq) <= MAXINT &
       (uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
-( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) : NAT )
+( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) <= MAXINT )
     THEN
       IF uu /: dom(cartSeller) THEN
 	cartSeller := cartSeller \/ {uu |-> dono(pp)}
@@ -297,7 +303,8 @@ removeProductFromCart(uu, pp, rr, qq) =
     rr : NAT &
     qq : NAT1 &
     rr : dom(cartContents(uu)(pp)) &
-    qq <= cartContents(uu)(pp)(rr)
+    qq <= cartContents(uu)(pp)(rr) &
+    (qq + estoque(pp)) <= MAXINT
   THEN
    IF qq = cartContents(uu)(pp)(rr) THEN
       totalPriceCart(uu) := totalPriceCart(uu) - (cartContents(uu)(pp)(rr) * rr) ||
@@ -328,7 +335,7 @@ buyProductsFromCart(uu) =
         uu : dom(creditousuario) &
 	uu : dom(totalPriceCart) &
         creditousuario(uu) >= totalPriceCart(uu) &
-        (idPurchase + 1) : NAT
+        (idPurchase + 1) <= MAXINT
     THEN
 	creditousuario(uu) := creditousuario(uu) - totalPriceCart(uu) ||
         totalPriceCart(uu) := 0 ||
@@ -440,8 +447,8 @@ oo <-- preAddUser(uu, nn, cc) =
 oo <-- preRemoveUser(uu) =
     PRE uu : IDUSUARIO THEN
 	IF uu : dom(usuarios) &
-            uu : dom(creditousuario) &
-            uu /: dom(dividausuario)
+           uu : dom(creditousuario) &
+           uu /: dom(dividausuario)
 	THEN oo := TRUE
 	ELSE oo := FALSE
 	END
@@ -459,7 +466,7 @@ oo <-- preAltNameUser(uu, nn) =
 oo <-- preAddCredit(uu, cc) =
     PRE uu: IDUSUARIO & cc : NAT THEN
 	IF cc : NAT1 & uu : dom(creditousuario) &
-	(creditousuario(uu) + cc) : NAT1
+	(creditousuario(uu) + cc) <= MAXINT
 	THEN oo := TRUE
 	ELSE oo := FALSE
 	END
@@ -478,8 +485,9 @@ oo <-- preWithdrawCredit(uu, cc) =
 	END
     END;
 
-oo <-- preAddProduct(ii, nn, uu) =
-    PRE ii : IDPRODUTO & nn : NOMEPRODUTO & uu : IDUSUARIO
+oo <-- preAddProduct(ii, nn, uu, qq, pp) =
+    PRE ii : IDPRODUTO & nn : NOMEPRODUTO & uu : IDUSUARIO &
+	qq : NAT & pp : NAT
     THEN
 	IF ii /: dom(produtos) & ii /: dom(dono) & uu : dom(usuarios)
 	THEN oo := TRUE
@@ -525,7 +533,7 @@ oo <-- preBuyProduct(uu, pp, qq) =
         IF  uu : dom(usuarios) & 
       	    pp : dom(produtos) &
       	    uu /= dono(pp) &
-	    ( creditousuario(dono(pp)) + (precoproduto(pp) * qq) ) : NAT &
+	    ( creditousuario(dono(pp)) + (precoproduto(pp) * qq) ) <= MAXINT &
       	    qq : NAT1 &
       	    precoproduto(pp) * qq <= creditousuario(uu) &
       	    qq <= estoque(pp)
@@ -546,12 +554,13 @@ oo <-- preReturnProduct(uu, pp, rr, qq) =
         qq : NAT1 &
         rr : dom(lastPurchase(uu)(pp)) &
         qq <= lastPurchase(uu)(pp)(rr) &
-        ( creditousuario(uu) + lastPurchase(uu)(pp)(rr) * rr ) : NAT &
+	(pp : dom(estoque) => ( qq + estoque(pp) ) <= MAXINT) &
+        ( creditousuario(uu) + lastPurchase(uu)(pp)(rr) * rr ) <= MAXINT &
         
         ( dono(pp) : dom(dividausuario) =>
-	( dividausuario(dono(pp)) + (lastPurchase(uu)(pp)(rr) * rr) ) : NAT ) &
+	( dividausuario(dono(pp)) + (lastPurchase(uu)(pp)(rr) * rr) ) <= MAXINT ) &
         
-        ( dono(pp) /: dom(dividausuario) => (lastPurchase(uu)(pp)(rr) * rr) : NAT )
+        ( dono(pp) /: dom(dividausuario) => (lastPurchase(uu)(pp)(rr) * rr) <= MAXINT )
     THEN oo := TRUE
     ELSE oo := FALSE
     END
@@ -565,8 +574,9 @@ oo <-- preAddProductToCart(uu, pp, qq) =
           qq : NAT1 & 
           uu : dom(totalPriceCart) &
           qq <= estoque(pp) &
+	  (cartContents(uu)(pp)(precoproduto(pp)) + qq) <= MAXINT &
           (uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
-          ( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) : NAT )
+          ( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) <= MAXINT )
 	THEN oo := TRUE
         ELSE oo := FALSE
         END
@@ -595,7 +605,7 @@ oo <-- preBuyProductsFromCart(uu) =
            uu : dom(creditousuario) &
 	   uu : dom(totalPriceCart) &
            creditousuario(uu) >= totalPriceCart(uu)&
-	   (idPurchase + 1) : NAT
+	   (idPurchase + 1) <= MAXINT
 	THEN oo := TRUE
         ELSE oo := FALSE
         END
