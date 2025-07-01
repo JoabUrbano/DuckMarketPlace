@@ -44,7 +44,7 @@ OPERATIONS
     altNameUser(uu, nn) = skip;
     addCredit(uu, cc) = skip;
     withdrawCredit(uu, cc) =  skip;
-    addProduct(ii, nn, uu) = skip;
+    addProduct(ii, nn, uu, qq, pp) = skip;
     removeProduct(ii)= skip;
     altProductName(ii, nn) = skip;
     altProductStock(ii, qq) = skip;
@@ -82,7 +82,7 @@ OPERATIONS
     oo <-- preAltNameUser(uu, nn) = skip;
     oo <-- preAddCredit(uu, cc) = skip;
     oo <-- preWithdrawCredit(uu, cc) =  skip;
-    oo <-- preAddProduct(ii, nn, uu) = skip;
+    oo <-- preAddProduct(ii, nn, uu, qq, pp) = skip;
     oo <-- preRemoveProduct(ii) = skip;
     oo <-- preAltProductName(ii, nn) = skip;
     oo <-- preAltProductStock(ii, qq) = skip;
