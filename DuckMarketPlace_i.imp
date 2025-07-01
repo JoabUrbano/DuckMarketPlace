@@ -18,10 +18,13 @@ CONCRETE_VARIABLES
 INVARIANT
     usuarios_i : IDUSUARIO --> NOMEUSUARIO &
     dom(usuarios_i |>> {userDummy}) = dom(usuarios) &
+    
     creditousuario_i : IDUSUARIO --> NAT &
     dom(creditousuario_i |>> {0}) = dom(creditousuario) &
+    
     totalPriceCart_i : IDUSUARIO --> NAT &
     dom(totalPriceCart_i |>> {0}) = dom(totalPriceCart) &
+    
     userIdsUsed_i : IDUSUARIO --> BOOL &
     dom(userIdsUsed_i |> {TRUE}) = userIdsUsed
     
@@ -61,7 +64,12 @@ OPERATIONS
     
     /* ----- Operações de query ----- */
     oo <-- showUserCredit(uu) = skip;
-    oo <-- showUserName(uu) = skip;
+    oo <-- showUserName(uu) = 
+	BEGIN
+	    IF usuarios_i(uu) /= userDummy THEN
+		oo := usuarios_i(uu)
+	    END
+	END;
     oo <-- showUserCartValue(uu) = skip;
     oo <-- showUserDebt(uu) = skip;
     oo <-- showProductName(pp) = skip;
@@ -72,12 +80,13 @@ OPERATIONS
     oo <-- preAddUser(uu, nn, cc) = 
         VAR isUsed IN
             isUsed := userIdsUsed_i(uu);
-            IF  isUsed = FALSE & uu /= userDummy THEN
+            IF  isUsed = FALSE & nn /= userDummy THEN
                 oo := TRUE
             ELSE 
                 oo := FALSE
             END
-        END;        
+        END;
+
     oo <-- preRemoveUser(uu) = skip;
     oo <-- preAltNameUser(uu, nn) = skip;
     oo <-- preAddCredit(uu, cc) = skip;
