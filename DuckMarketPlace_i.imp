@@ -44,17 +44,22 @@ INITIALISATION
     userIdsUsed_i := IDUSUARIO*{FALSE}
 
 OPERATIONS
+
 addUser(uu, nn, cc) = 
-        BEGIN
-            usuarios_i(uu) :=  nn;
-            creditousuario_i(uu) := cc;
-	    creditousuario_actived_i(uu) := TRUE;
-            totalPriceCart_i(uu) :=  0;
-            userIdsUsed_i(uu) := TRUE
-        END;
+    BEGIN
+        usuarios_i(uu) :=  nn;
+        creditousuario_i(uu) := cc;
+	creditousuario_actived_i(uu) := TRUE;
+        totalPriceCart_i(uu) :=  0;
+        userIdsUsed_i(uu) := TRUE
+    END;
         
     removeUser(uu) = skip;
-    altNameUser(uu, nn) = skip;
+
+altNameUser(uu, nn) =
+    BEGIN
+    	usuarios_i(uu) := nn
+    END;
 
 addCredit(uu, cc) =
     BEGIN
