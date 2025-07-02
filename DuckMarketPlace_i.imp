@@ -75,7 +75,7 @@ OPERATIONS
             totalPriceCart_i(uu) :=  0;
             userIdsUsed_i(uu) := TRUE
         END;
-        
+    //Fazer --------------------------------------    
     removeUser(uu) = skip;
 
     altNameUser(uu, nn) =
@@ -105,9 +105,22 @@ OPERATIONS
 	    precoproduto_i(ii) := pp
 	END;
 
-    removeProduct(ii)= skip;
-    altProductName(ii, nn) = skip;
-    altProductStock(ii, qq) = skip;
+    removeProduct(ii)= 
+	BEGIN
+	    produtos_i(ii) := productDummy ||
+	    estoque_i(ii) := 0 ||
+	    precoproduto_i(ii) := 0
+	END;
+
+    altProductName(ii, nn) = 
+	BEGIN
+	    produtos_i(ii) := nn
+	END;
+    
+    altProductStock(ii, qq) = 
+	BEGIN
+	    estoque_i(ii) := qq
+	END;
     altProductPrice(ii, pp) = skip;
     buyProduct(uu, pp, qq) = skip;
     returnProduct(uu, pp, rr, qq) = skip;
@@ -166,8 +179,19 @@ OPERATIONS
         END;
 
     oo <-- preRemoveUser(uu) = skip;
-    oo <-- preAltNameUser(uu, nn) = skip;
-    oo <-- preAddCredit(uu, cc) = skip;
+
+    oo <-- preAltNameUser(uu, nn) = 
+	IF usuarios_i(uu) /= userDummy & nn /= userDummy THEN
+	    oo := TRUE
+	ELSE oo := FALSE
+	END;
+
+    oo <-- preAddCredit(uu, cc) = 
+	IF usuarios_i(uu) /= userDummy THEN
+	    oo := TRUE
+	ELSE oo := FALSE
+	END;
+
     oo <-- preWithdrawCredit(uu, cc) =  skip;
     oo <-- preAddProduct(ii, nn, uu, qq, pp) = skip;
     oo <-- preRemoveProduct(ii) = skip;
