@@ -7,13 +7,15 @@ VALUES
     IDPRODUTO = 0..9;
     IDUSUARIO = 0..9;
     NOMEUSUARIO = 0..9;
-    userDummy = 0
+    userDummy = 0;
+    productDummy = 0;
+    userIdDummy = 0
     
 CONCRETE_VARIABLES
     usuarios_i,
+    active_users,
 
     creditousuario_i,
-    creditousuario_actived_i ,
 
     totalPriceCart_i,
     userIdsUsed_i,
@@ -26,11 +28,10 @@ CONCRETE_VARIABLES
 INVARIANT
     usuarios_i : IDUSUARIO --> NOMEUSUARIO &
     dom(usuarios_i |>> {userDummy}) = dom(usuarios) &
+    active_users : IDUSUARIO --> BOOL &
     
     creditousuario_i : IDUSUARIO --> NATURAL &
-    //dom(creditousuario_i |>> {0}) = dom(creditousuario) &
-    creditousuario_actived_i : IDUSUARIO --> BOOL &
-    dom( creditousuario_actived_i |> {TRUE} ) /\ dom(creditousuario_i) = dom(creditousuario) &
+    dom( active_users |> {TRUE} ) /\ dom(creditousuario_i) = dom(creditousuario) &
  
     totalPriceCart_i : IDUSUARIO --> NATURAL &
     dom(totalPriceCart_i |>> {0}) = dom(totalPriceCart) &
@@ -53,9 +54,9 @@ INVARIANT
     
 INITIALISATION
     usuarios_i := IDUSUARIO*{userDummy};
+    active_users := IDUSUARIO*{FALSE};
 
     creditousuario_i := IDUSUARIO*{0};
-    creditousuario_actived_i := IDUSUARIO*{FALSE};
 
     totalPriceCart_i := IDUSUARIO*{0};
     userIdsUsed_i := IDUSUARIO*{FALSE};
@@ -71,56 +72,43 @@ OPERATIONS
         BEGIN
             usuarios_i(uu) :=  nn;
             creditousuario_i(uu) := cc;
-	    creditousuario_actived_i(uu) := TRUE;
+	        active_users(uu) := TRUE;
             totalPriceCart_i(uu) :=  0;
             userIdsUsed_i(uu) := TRUE
         END;
-    //Fazer --------------------------------------    
+        
     removeUser(uu) = skip;
 
     altNameUser(uu, nn) =
         BEGIN
-    	    usuarios_i(uu) := nn
+    	        usuarios_i(uu) := nn
         END;
 
     addCredit(uu, cc) =
         BEGIN
-	    IF creditousuario_actived_i(uu) = TRUE THEN
-    	        creditousuario_i(uu) := creditousuario_i(uu) + cc
-	    END
+	        IF active_users(uu) = TRUE THEN
+        	        creditousuario_i(uu) := creditousuario_i(uu) + cc
+    	        END
         END;
 
     withdrawCredit(uu, cc) = 
         BEGIN
-    	    IF creditousuario_actived_i(uu) = TRUE THEN
+    	    IF active_users(uu) = TRUE THEN
 	        creditousuario_i(uu) := creditousuario_i(uu) - cc
 	    END
         END;
 
     addProduct(ii, nn, uu, qq, pp) = 
 	BEGIN
-	    produtos_i(ii) := nn ||
-	    dono_i(ii) := uu ||
-	    estoque_i(ii) := qq ||
+	    produtos_i(ii) := nn;
+	    dono_i(ii) := uu;
+	    estoque_i(ii) := qq;
 	    precoproduto_i(ii) := pp
 	END;
 
-    removeProduct(ii)= 
-	BEGIN
-	    produtos_i(ii) := productDummy ||
-	    estoque_i(ii) := 0 ||
-	    precoproduto_i(ii) := 0
-	END;
-
-    altProductName(ii, nn) = 
-	BEGIN
-	    produtos_i(ii) := nn
-	END;
-    
-    altProductStock(ii, qq) = 
-	BEGIN
-	    estoque_i(ii) := qq
-	END;
+    removeProduct(ii)= skip;
+    altProductName(ii, nn) = skip;
+    altProductStock(ii, qq) = skip;
     altProductPrice(ii, pp) = skip;
     buyProduct(uu, pp, qq) = skip;
     returnProduct(uu, pp, rr, qq) = skip;
@@ -179,19 +167,8 @@ OPERATIONS
         END;
 
     oo <-- preRemoveUser(uu) = skip;
-
-    oo <-- preAltNameUser(uu, nn) = 
-	IF usuarios_i(uu) /= userDummy & nn /= userDummy THEN
-	    oo := TRUE
-	ELSE oo := FALSE
-	END;
-
-    oo <-- preAddCredit(uu, cc) = 
-	IF usuarios_i(uu) /= userDummy THEN
-	    oo := TRUE
-	ELSE oo := FALSE
-	END;
-
+    oo <-- preAltNameUser(uu, nn) = skip;
+    oo <-- preAddCredit(uu, cc) = skip;
     oo <-- preWithdrawCredit(uu, cc) =  skip;
     oo <-- preAddProduct(ii, nn, uu, qq, pp) = skip;
     oo <-- preRemoveProduct(ii) = skip;
