@@ -272,8 +272,7 @@ addProductToCart(uu, pp, qq) =
       qq : NAT1 & 
       uu : dom(totalPriceCart)  &
       qq <= estoque(pp) &
-      (cartContents(uu)(pp)(precoproduto(pp)) + qq) <= MAXINT &
-      (uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
+      ( uu : dom(cartContents) &  pp : dom(cartContents(uu)) => (cartContents(uu)(pp)(precoproduto(pp)) + qq) <= MAXINT ) &(uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
 ( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) <= MAXINT )
     THEN
       IF uu /: dom(cartSeller) THEN
@@ -338,10 +337,13 @@ buyProductsFromCart(uu) =
         uu : dom(creditousuario) &
 	uu : dom(totalPriceCart) &
         creditousuario(uu) >= totalPriceCart(uu) &
-        (idPurchase + 1) <= MAXINT
+        ( (idPurchase + 1) <= MAXINT )
     THEN
-	creditousuario(uu) := creditousuario(uu) - totalPriceCart(uu) ||
-        totalPriceCart(uu) := 0 ||
+	creditousuario := creditousuario <+ {
+            uu |-> (creditousuario(uu) - totalPriceCart(uu) ),
+             cartSeller(uu) |-> (creditousuario(cartSeller(uu)) + totalPriceCart(uu))
+        } || 
+	totalPriceCart(uu) := 0 ||
 	cartContents := {uu} <<| cartContents ||
         
         lastPurchase(uu) := cartContents(uu) ||
@@ -577,7 +579,7 @@ oo <-- preAddProductToCart(uu, pp, qq) =
           qq : NAT1 & 
           uu : dom(totalPriceCart) &
           qq <= estoque(pp) &
-	  (cartContents(uu)(pp)(precoproduto(pp)) + qq) <= MAXINT &
+	  ( uu : dom(cartContents) &  pp : dom(cartContents(uu)) => (cartContents(uu)(pp)(precoproduto(pp)) + qq) <= MAXINT ) &(uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
           (uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
           ( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) <= MAXINT )
 	THEN oo := TRUE
@@ -607,8 +609,8 @@ oo <-- preBuyProductsFromCart(uu) =
 	IF uu : dom(cartContents) &
            uu : dom(creditousuario) &
 	   uu : dom(totalPriceCart) &
-           creditousuario(uu) >= totalPriceCart(uu)&
-	   (idPurchase + 1) <= MAXINT
+           creditousuario(uu) >= totalPriceCart(uu) &
+	   ( (idPurchase + 1) <= MAXINT )
 	THEN oo := TRUE
         ELSE oo := FALSE
         END
