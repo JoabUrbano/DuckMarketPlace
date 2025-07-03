@@ -313,7 +313,7 @@ removeProductFromCart(uu, pp, rr, qq) =
     qq : NAT1 &
     rr : dom(cartContents(uu)(pp)) &
     qq <= cartContents(uu)(pp)(rr) &
-    (qq + estoque(pp)) <= MAXINT
+    ( pp : dom(estoque) => (qq + estoque(pp)) <= MAXINT)
   THEN
    IF qq = cartContents(uu)(pp)(rr) THEN
       totalPriceCart(uu) := totalPriceCart(uu) - (cartContents(uu)(pp)(rr) * rr) ||
@@ -344,7 +344,10 @@ buyProductsFromCart(uu) =
         uu : dom(creditousuario) &
 	uu : dom(totalPriceCart) &
         creditousuario(uu) >= totalPriceCart(uu) &
-        ( (idPurchase + 1) <= MAXINT )
+        ( (idPurchase + 1) <= MAXINT ) &
+	uu : dom(cartSeller) &
+	cartSeller(uu) : dom(creditousuario) &
+	creditousuario(cartSeller(uu)) + totalPriceCart(uu) <= MAXINT
     THEN
 	creditousuario := creditousuario <+ {
             uu |-> (creditousuario(uu) - totalPriceCart(uu) ),
@@ -610,7 +613,8 @@ oo <-- preRemoveProductFromCart(uu, pp, rr, qq) =
        pp : dom(cartContents(uu)) &
        qq : NAT1 &
        rr : dom(cartContents(uu)(pp)) &
-       qq <= cartContents(uu)(pp)(rr)
+       qq <= cartContents(uu)(pp)(rr) & 
+      ( pp : dom(estoque) => (qq + estoque(pp)) <= MAXINT)
     THEN oo := TRUE
     ELSE oo := FALSE
     END
@@ -622,7 +626,10 @@ oo <-- preBuyProductsFromCart(uu) =
            uu : dom(creditousuario) &
 	   uu : dom(totalPriceCart) &
            creditousuario(uu) >= totalPriceCart(uu) &
-	   ( (idPurchase + 1) <= MAXINT )
+	   ( (idPurchase + 1) <= MAXINT ) &
+	   uu : dom(cartSeller) &
+	   cartSeller(uu) : dom(creditousuario) &
+	   creditousuario(cartSeller(uu)) + totalPriceCart(uu) <= MAXINT
 	THEN oo := TRUE
         ELSE oo := FALSE
         END
