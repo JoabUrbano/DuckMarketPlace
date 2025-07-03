@@ -234,11 +234,11 @@ returnProduct(uu, pp, rr, qq) =
     ( dono(pp) /: dom(dividausuario) => (lastPurchase(uu)(pp)(rr) * rr) <= MAXINT )
   THEN
     IF dono(pp) : dom(dividausuario) THEN
-        dividausuario(dono(pp)) := dividausuario(dono(pp)) + (lastPurchase(uu)(pp)(rr) * rr)
+        dividausuario(dono(pp)) := dividausuario(dono(pp)) + (qq * rr)
     ELSE
-        dividausuario := dividausuario \/ {dono(pp) |-> lastPurchase(uu)(pp)(rr) * rr}
+        dividausuario := dividausuario \/ {dono(pp) |-> qq * rr}
     END ||
-    creditousuario(uu) := creditousuario(uu) + lastPurchase(uu)(pp)(rr) * rr ||
+    creditousuario(uu) := creditousuario(uu) + qq * rr ||
     IF qq = lastPurchase(uu)(pp)(rr) THEN
       IF card(lastPurchase(uu)(pp)) <= 1 THEN
            lastPurchase(uu) := {pp} <<| lastPurchase(uu) ||
