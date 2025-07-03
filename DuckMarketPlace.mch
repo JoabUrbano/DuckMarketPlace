@@ -374,7 +374,8 @@ payDebtWithCredit(ii, cc) =
     PRE
         ii : IDUSUARIO &
         ii : dom(dividausuario) &
-        cc : NAT1
+        cc : NAT1 &
+	cc <= dividausuario(ii)
     THEN
         IF cc >= dividausuario(ii) THEN
             dividausuario := {ii} <<| dividausuario
@@ -629,7 +630,11 @@ oo <-- prePayDebt(ii) =
 
 oo <-- prePayDebtWithCredit(ii, cc) =
     PRE ii : IDUSUARIO & cc : NAT THEN
-        IF ii : dom(dividausuario) & cc : NAT1 THEN
+        IF 
+	    ii : dom(dividausuario) &
+	    cc : NAT1 &
+	    cc <= dividausuario(ii) 
+	THEN
 	    oo := TRUE
 	ELSE oo := FALSE
         END
