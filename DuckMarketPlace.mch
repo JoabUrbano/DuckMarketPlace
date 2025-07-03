@@ -56,6 +56,10 @@ INVARIANT
     lastPurchaseId : NAT &
     cartSeller : IDUSUARIO +-> IDUSUARIO &
 
+    // Invariants de MAXINT
+    !cc.(cc : ran(creditousuario) => cc <= MAXINT) &
+    
+    // Invariants de conjuntos
     userIdsUsed <: IDUSUARIO &
     dom(usuarios) <: userIdsUsed &
     dom(usuariosinativos) <: userIdsUsed &
@@ -91,7 +95,7 @@ INITIALISATION
 OPERATIONS
 
 addUser(uu, nn, cc) =
-    PRE uu : IDUSUARIO & nn : NOMEUSUARIO & cc : NAT &
+    PRE uu : IDUSUARIO & nn : NOMEUSUARIO & cc : NAT & cc <= MAXINT &
         uu /: userIdsUsed & uu /: dom(totalPriceCart) & nn /= userDummy
     THEN 
         usuarios := usuarios \/ {uu |-> nn} ||
@@ -141,7 +145,9 @@ altNameUser(uu, nn) =
 addCredit(uu, cc) =
     PRE 
 	uu: IDUSUARIO &
-	cc : NAT1 &
+	cc : NAT &
+	cc > 0 &
+	cc <= MAXINT &
 	uu : dom(creditousuario) &
 	(creditousuario(uu) + cc) <= MAXINT
     THEN creditousuario(uu) := creditousuario(uu) + cc
@@ -272,7 +278,8 @@ addProductToCart(uu, pp, qq) =
       qq : NAT1 & 
       uu : dom(totalPriceCart)  &
       qq <= estoque(pp) &
-      ( uu : dom(cartContents) &  pp : dom(cartContents(uu)) => (cartContents(uu)(pp)(precoproduto(pp)) + qq) <= MAXINT ) &(uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
+      ( uu : dom(cartContents) &  pp : dom(cartContents(uu)) & precoproduto(pp) : dom(cartContents(uu)(pp)) => (cartContents(uu)(pp)(precoproduto(pp)) + qq) <= MAXINT )&
+      (uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
 ( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) <= MAXINT )
     THEN
       IF uu /: dom(cartSeller) THEN
@@ -471,8 +478,11 @@ oo <-- preAltNameUser(uu, nn) =
 
 oo <-- preAddCredit(uu, cc) =
     PRE uu: IDUSUARIO & cc : NAT THEN
-	IF cc : NAT1 & uu : dom(creditousuario) &
-	(creditousuario(uu) + cc) <= MAXINT
+	IF 
+	    uu : dom(creditousuario) &
+	    (creditousuario(uu) + cc) <= MAXINT &
+	    cc > 0 &
+	    cc <= MAXINT
 	THEN oo := TRUE
 	ELSE oo := FALSE
 	END
@@ -580,7 +590,8 @@ oo <-- preAddProductToCart(uu, pp, qq) =
           qq : NAT1 & 
           uu : dom(totalPriceCart) &
           qq <= estoque(pp) &
-	  ( uu : dom(cartContents) &  pp : dom(cartContents(uu)) => (cartContents(uu)(pp)(precoproduto(pp)) + qq) <= MAXINT ) &(uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
+          ( uu : dom(cartContents) &  pp : dom(cartContents(uu)) & precoproduto(pp) : dom(cartContents(uu)(pp)) => (cartContents(uu)(pp)(precoproduto(pp)) + qq) <= MAXINT )&
+          (uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
           (uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
           ( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) <= MAXINT )
 	THEN oo := TRUE
