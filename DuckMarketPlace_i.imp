@@ -243,9 +243,9 @@ OPERATIONS
     oo <-- preRemoveUser(uu) = skip;
     
     oo <-- preAltNameUser(uu, nn) = 
-        VAR isUsed IN
-            isUsed := userIdsUsed_i(uu);
-            IF  isUsed = TRUE & nn /= userDummy THEN
+        VAR exist IN
+	    exist := usuarios_i(uu);
+	    IF  exist /= userDummy & nn /= userDummy THEN
                 oo := TRUE
             ELSE 
                 oo := FALSE
