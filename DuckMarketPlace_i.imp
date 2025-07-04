@@ -186,21 +186,26 @@ OPERATIONS
     
     /* ----- Operações de pré condições ----- */
     oo <-- preAddUser(uu, nn, cc) = 
-        VAR isUsed IN
+        VAR isUsed, isActived IN
             isUsed := userIdsUsed_i(uu);
-            IF  isUsed = FALSE & nn /= userDummy THEN
+	    isActived := active_users(uu);
+            IF  
+		isUsed = FALSE &
+		isActived = FALSE &
+		nn /= userDummy 
+	    THEN
                 oo := TRUE
             ELSE 
                 oo := FALSE
             END
         END;
-
+	// Falta fazer!!!!
     oo <-- preRemoveUser(uu) = skip;
     
     oo <-- preAltNameUser(uu, nn) = 
         VAR isUsed IN
             isUsed := userIdsUsed_i(uu);
-            IF  isUsed = TRUE THEN
+            IF  isUsed = TRUE & nn /= userDummy THEN
                 oo := TRUE
             ELSE 
                 oo := FALSE
@@ -229,14 +234,40 @@ OPERATIONS
 	        END
 	    END
         END;
-	//Falta fazer!!!
-    oo <-- preAddProduct(ii, nn, uu, qq, pp) = skip;
-    oo <-- preRemoveProduct(ii) = skip;
+
+    oo <-- preAddProduct(ii, nn, uu, qq, pp) =
+	BEGIN
+	    VAR prudctIsDummy, donoIsDummy IN
+		prudctIsDummy  := produtos_i(ii);
+		donoIsDummy :=  dono_i(ii);
+		IF 
+		    prudctIsDummy = productDummy &
+		    donoIsDummy = userIdDummy &
+		    uu /= userIdDummy &
+		    nn /= productDummy
+		THEN
+		    oo := TRUE
+		ELSE
+		    oo := FALSE
+		END
+	    END
+	END;
+    oo <-- preRemoveProduct(ii) =
+	BEGIN
+	    VAR prudctIsDummy IN
+		prudctIsDummy  := produtos_i(ii);
+		IF prudctIsDummy /= productDummy THEN
+		    oo := TRUE
+		ELSE
+		    oo := FALSE
+		END
+	    END
+	END;
     
     oo <-- preAltProductName(ii, nn) = 
         VAR np IN
             np := produtos_i(ii);
-            IF np /= productDummy THEN
+            IF np /= productDummy & nn /= productDummy THEN
                 oo := TRUE
             ELSE
                 oo := FALSE
