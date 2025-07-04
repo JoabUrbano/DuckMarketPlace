@@ -81,27 +81,17 @@ OPERATIONS
 
     altNameUser(uu, nn) =
         BEGIN
-    	        usuarios_i(uu) := nn
+    	    usuarios_i(uu) := nn
         END;
 
     addCredit(uu, cc) =
         BEGIN
-            VAR isActived IN
-                isActived := active_users(uu);
-	            IF isActived = TRUE THEN
-        	        creditousuario_i(uu) := creditousuario_i(uu) + cc
-    	        END
-    	    END
+            creditousuario_i(uu) := creditousuario_i(uu) + cc
         END;
 
     withdrawCredit(uu, cc) = 
         BEGIN
-            VAR isActived IN
-                isActived := active_users(uu);
-    	        IF isActived = TRUE THEN
-	                creditousuario_i(uu) := creditousuario_i(uu) - cc
-	            END
-	        END
+	    creditousuario_i(uu) := creditousuario_i(uu) - cc
         END;
 
     addProduct(ii, nn, uu, qq, pp) = 
@@ -217,8 +207,29 @@ OPERATIONS
             END
         END;
         
-    oo <-- preAddCredit(uu, cc) = skip;
-    oo <-- preWithdrawCredit(uu, cc) =  skip;
+    oo <-- preAddCredit(uu, cc) =
+	BEGIN
+	    VAR isActived IN
+                isActived := active_users(uu);
+	        IF isActived = TRUE THEN
+        	    oo := TRUE
+		ELSE
+		    oo := FALSE
+    	        END
+    	    END
+	END;
+    oo <-- preWithdrawCredit(uu, cc) =
+	BEGIN
+            VAR isActived IN
+                isActived := active_users(uu);
+    	        IF isActived = TRUE THEN
+	            oo := TRUE
+		ELSE
+		    oo := FALSE
+	        END
+	    END
+        END;
+	//Falta fazer!!!
     oo <-- preAddProduct(ii, nn, uu, qq, pp) = skip;
     oo <-- preRemoveProduct(ii) = skip;
     
