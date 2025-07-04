@@ -14,6 +14,8 @@ VALUES
 CONCRETE_VARIABLES
     usuarios_i,
     active_users,
+    dividausuario_i,
+    dividausuario_aberta_i,
 
     creditousuario_i,
 
@@ -39,6 +41,10 @@ INVARIANT
     userIdsUsed_i : IDUSUARIO --> BOOL &
     dom(userIdsUsed_i |> {TRUE}) = userIdsUsed &
 
+    dividausuario_i : IDUSUARIO --> NAT &
+    dividausuario_aberta_i : IDUSUARIO --> BOOL &
+    dom(dividausuario_i) /\ dom(dividausuario_aberta_i |> {TRUE}) = dom(dividausuario) &
+
     /* ----- Produtos ----- */
     produtos_i : IDPRODUTO --> NOMEPRODUTO &
     dom(produtos_i |>> {productDummy}) = dom(produtos) &
@@ -55,6 +61,9 @@ INVARIANT
 INITIALISATION
     usuarios_i := IDUSUARIO*{userDummy};
     active_users := IDUSUARIO*{FALSE};
+    
+    dividausuario_i := IDUSUARIO*{0};
+    dividausuario_aberta_i := IDUSUARIO*{FALSE};
 
     creditousuario_i := IDUSUARIO*{0};
 
@@ -129,8 +138,35 @@ OPERATIONS
     addProductToCart(uu, pp, qq) = skip;
     removeProductFromCart(uu, pp, rr, qq) = skip;
     buyProductsFromCart(uu) = skip;
-    payDebt(ii) = skip;
-    payDebtWithCredit(ii, cc) = skip;
+    
+    payDebt(uu) =
+	BEGIN
+	    VAR divida, credito IN
+		divida := dividausuario_i(uu);
+		credito := creditousuario_i(uu);
+	    	IF divida <= credito THEN
+		    creditousuario_i(uu) := credito - divida;
+		    dividausuario_i(uu) := 0;
+		    dividausuario_aberta_i(uu) := FALSE
+	        ELSE
+		    dividausuario_i(uu) := divida - credito
+	        END
+	    END
+	END;
+
+    payDebtWithCredit(uu, cc) =
+	BEGIN
+	    VAR divida IN
+		divida := dividausuario_i(uu);
+	    	IF divida <= cc THEN
+		    dividausuario_i(uu) := 0;
+		    dividausuario_aberta_i(uu) := FALSE
+	        ELSE
+		    dividausuario_i(uu) := divida - cc
+	        END
+	    END
+	END;
+
     withdrawInactiveCredit(uu) = skip;
     removeInactiveUser(uu) = skip;
     
@@ -303,8 +339,27 @@ OPERATIONS
     oo <-- preAddProductToCart(uu, pp, qq) = skip;
     oo <-- preRemoveProductFromCart(uu, pp, rr, qq) = skip;
     oo <-- preBuyProductsFromCart(uu) = skip;
-    oo <-- prePayDebt(ii) =  skip;
-    oo <-- prePayDebtWithCredit(ii, cc) = skip;
+    
+    oo <-- prePayDebt(uu) =
+	VAR inDebt, isActive IN
+	    inDebt := dividausuario_aberta_i(uu);
+	    isActive := usuarios_i(uu);
+	    IF inDebt = TRUE & isActive /= userDummy THEN
+		oo := TRUE
+	    ELSE
+		oo := FALSE
+	    END
+	END;
+
+    oo <-- prePayDebtWithCredit(uu, cc) =
+	VAR inDebt IN
+	    inDebt := dividausuario_aberta_i(uu);
+	    IF inDebt = TRUE THEN
+		oo := TRUE
+	    ELSE
+		oo := FALSE
+	    END
+	END;
     oo <-- preWithdrawInactiveCredit(uu) = skip;
     oo <-- preRemoveInactiveUser(uu) = skip
  END

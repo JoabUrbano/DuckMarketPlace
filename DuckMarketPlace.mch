@@ -408,35 +408,35 @@ buyProductsFromCart(uu) =
 	cartSeller := {uu} <<| cartSeller	
     END;
 
-payDebt(ii) = 
+payDebt(uu) = 
     PRE 
-        ii : IDUSUARIO &
-        ii : dom(dividausuario) &
-        ii : dom(usuarios) &
-        ii : dom(creditousuario)
+        uu : IDUSUARIO &
+        uu : dom(dividausuario) &
+        uu : dom(usuarios) &
+        uu : dom(creditousuario)
     THEN
-        IF creditousuario(ii) >= dividausuario(ii) THEN
-            creditousuario(ii) := creditousuario(ii) - dividausuario(ii) ||
-	    dividausuario := {ii} <<| dividausuario
+        IF creditousuario(uu) >= dividausuario(uu) THEN
+            creditousuario(uu) := creditousuario(uu) - dividausuario(uu) ||
+	    dividausuario := {uu} <<| dividausuario
         ELSE
-            dividausuario(ii) := dividausuario(ii) - creditousuario(ii) ||
-	    creditousuario(ii) := 0
+            dividausuario(uu) := dividausuario(uu) - creditousuario(uu) ||
+	    creditousuario(uu) := 0
 	END
     END;
 
-payDebtWithCredit(ii, cc) =
+payDebtWithCredit(uu, cc) =
     PRE
-        ii : IDUSUARIO &
-        ii : dom(dividausuario) &
+        uu : IDUSUARIO &
+        uu : dom(dividausuario) &
         cc : NAT &
         cc > 0 &
         cc <= MAXINT &
-	cc <= dividausuario(ii)
+	cc <= dividausuario(uu)
     THEN
-        IF cc >= dividausuario(ii) THEN
-            dividausuario := {ii} <<| dividausuario
+        IF cc >= dividausuario(uu) THEN
+            dividausuario := {uu} <<| dividausuario
         ELSE
-            dividausuario(ii) := dividausuario(ii) - cc
+            dividausuario(uu) := dividausuario(uu) - cc
         END
     END;
     
@@ -708,24 +708,24 @@ oo <-- preBuyProductsFromCart(uu) =
         END
     END;
 
-oo <-- prePayDebt(ii) = 
-    PRE ii : IDUSUARIO THEN
+oo <-- prePayDebt(uu) = 
+    PRE uu : IDUSUARIO THEN
         IF
-            ii : dom(dividausuario) &
-            ii : dom(usuarios) &
-            ii : dom(creditousuario)
+            uu : dom(dividausuario) &
+            uu : dom(usuarios) &
+            uu : dom(creditousuario)
 	THEN oo := TRUE
         ELSE oo := FALSE
         END
     END;
 
-oo <-- prePayDebtWithCredit(ii, cc) =
-    PRE ii : IDUSUARIO & cc : NAT THEN
+oo <-- prePayDebtWithCredit(uu, cc) =
+    PRE uu : IDUSUARIO & cc : NAT THEN
         IF 
-	    ii : dom(dividausuario) &
+	    uu : dom(dividausuario) &
 	    cc > 0 &
             cc <= MAXINT &
-	    cc <= dividausuario(ii) 
+	    cc <= dividausuario(uu) 
 	THEN
 	    oo := TRUE
 	ELSE oo := FALSE
