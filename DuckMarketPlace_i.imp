@@ -153,9 +153,11 @@ OPERATIONS
 	        END
 	    END
 	END;
+
 	//Falta fazer ainda!!!!
     oo <-- showUserCartValue(uu) = skip;
     oo <-- showUserDebt(uu) = skip;
+    
     oo <-- showProductName(pp) =
 	BEGIN
 	    VAR isProductDummy IN
@@ -165,6 +167,7 @@ OPERATIONS
 	        END
 	    END
 	END;
+
     oo <-- showProductStock(pp) =
 	BEGIN
 	    VAR isProductDummy IN
@@ -174,6 +177,7 @@ OPERATIONS
 	        END
 	    END
 	END;
+
     oo <-- showProductPrice(pp) =
 	BEGIN
 	    VAR isProductDummy IN
