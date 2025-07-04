@@ -72,11 +72,11 @@ OPERATIONS
         BEGIN
             usuarios_i(uu) :=  nn;
             creditousuario_i(uu) := cc;
-	        active_users(uu) := TRUE;
+	    active_users(uu) := TRUE;
             totalPriceCart_i(uu) :=  0;
             userIdsUsed_i(uu) := TRUE
         END;
-        
+    //Falta implementar
     removeUser(uu) = skip;
 
     altNameUser(uu, nn) =
@@ -112,7 +112,12 @@ OPERATIONS
 	    precoproduto_i(ii) := pp
 	END;
 
-    removeProduct(ii)= skip;
+    removeProduct(ii)=
+	BEGIN
+	    produtos_i(ii) := productDummy;
+	    estoque_i(ii) := 0;
+	    precoproduto_i(ii) := 0
+	END;
     
     altProductName(ii, nn) = 
         BEGIN
