@@ -45,13 +45,13 @@ INVARIANT
     precoproduto : IDPRODUTO +-> NAT & 
     
     dono : IDPRODUTO +-> IDUSUARIO & 
-    cartContents : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
+    cartContents : IDUSUARIO +-> (IDPRODUTO +-> (NAT <-> NAT)) &
     totalPriceCart : IDUSUARIO +-> NAT &
     ownerCartProducts : IDUSUARIO +-> IDUSUARIO &
     
-    lastPurchase : IDUSUARIO <-> (IDPRODUTO <-> (NAT <-> NAT)) &
+    lastPurchase : IDUSUARIO +-> (IDPRODUTO +-> (NAT <-> NAT)) &
     purchaseUsers : NAT +-> IDUSUARIO & 
-    purchaseHistory : NAT <-> (IDPRODUTO <-> (NAT <-> NAT)) &
+    purchaseHistory : NAT +-> (IDPRODUTO <-> (NAT <-> NAT)) &
     idPurchase : NAT &
     lastPurchaseId : NAT &
     cartSeller : IDUSUARIO +-> IDUSUARIO &
