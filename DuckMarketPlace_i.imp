@@ -140,6 +140,7 @@ OPERATIONS
 		    usersInactive(uu) := TRUE
 		END;
 		creditousuario_i(uu) := 0
+		//Usar um loop para remover os produtos
 	    END
             
         END;        
@@ -288,21 +289,37 @@ OPERATIONS
     
     /* ----- Operações de pré condições ----- */
     oo <-- preAddUser(uu, nn, cc) = 
-        VAR isUsed, isActived IN
+        VAR isUsed, isActived, name IN
             isUsed := userIdsUsed_i(uu);
 	    isActived := active_users(uu);
+	    name := usuarios_i(uu);
             IF  
 		isUsed = FALSE &
 		isActived = FALSE &
-		nn /= userDummy 
+		nn /= userDummy &
+		name = userDummy
 	    THEN
                 oo := TRUE
             ELSE 
                 oo := FALSE
             END
         END;
-	// Falta fazer!!!!
-    oo <-- preRemoveUser(uu) = skip;
+
+    oo <-- preRemoveUser(uu) =
+        VAR isUsed, isActived, name IN
+            isUsed := userIdsUsed_i(uu);
+	    isActived := active_users(uu);
+	    name := usuarios_i(uu);
+            IF  
+		isUsed = TRUE &
+		isActived = TRUE &
+		name /= userDummy
+	    THEN
+                oo := TRUE
+            ELSE 
+                oo := FALSE
+            END
+        END;
     
     oo <-- preAltNameUser(uu, nn) = 
         VAR exist IN
