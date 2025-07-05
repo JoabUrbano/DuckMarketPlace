@@ -131,12 +131,8 @@ OPERATIONS
     removeUser(uu) = 
         BEGIN
             usuarios_i(uu) := userDummy;
-            
-            produtos_i(uu) := productDummy;
-            estoque_i(uu) := 0;
-            precoproduto_i(uu) := 0;
-            
-            totalPriceCart_i(uu) := 0
+            totalPriceCart_i(uu) := 0;
+	    active_users(uu) := FALSE
             
         END;        
 
