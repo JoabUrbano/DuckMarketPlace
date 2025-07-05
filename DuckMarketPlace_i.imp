@@ -132,7 +132,15 @@ OPERATIONS
         BEGIN
             usuarios_i(uu) := userDummy;
             totalPriceCart_i(uu) := 0;
-	    active_users(uu) := FALSE
+	    active_users(uu) := FALSE;
+	    VAR hasCredit IN
+		hasCredit := creditousuario_i(uu);
+		IF hasCredit >= 0 THEN
+		    usuariosinativos_i(uu) := hasCredit;
+		    usersInactive(uu) := TRUE
+		END;
+		creditousuario_i(uu) := 0
+	    END
             
         END;        
 
