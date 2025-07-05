@@ -27,7 +27,15 @@ CONCRETE_VARIABLES
     produtos_i,
     precoproduto_i,
     estoque_i,
-    dono_i
+    dono_i,
+    
+    quantity,
+    amount,
+    amountProductInCart,
+    quantityProductInCart,
+    amountProductInLastPurchase,
+    quantityProductInLastPurchase
+    
     
 INVARIANT
     usuarios_i : IDUSUARIO --> NOMEUSUARIO &
@@ -62,8 +70,26 @@ INVARIANT
     dom(estoque_i) /\ dom(produtos_i |>> {productDummy}) = dom(estoque) &
 
     dono_i : IDPRODUTO --> IDUSUARIO &
-    dom(dono_i |>> {userIdDummy}) = dom(dono)
+    dom(dono_i |>> {userIdDummy}) = dom(dono) &
     
+    quantity : IDUSUARIO * IDPRODUTO --> NAT &
+    amount : IDUSUARIO * IDPRODUTO --> NAT &
+    !(uu, pp).
+    (uu:IDUSUARIO & pp:IDPRODUTO & uu : dom(lastPurchase) & pp : dom(lastPurchase(uu)) => 
+        {quantity(uu, pp) |-> amount(uu, pp) } = lastPurchase(uu)(pp)) &
+    
+     amountProductInCart : IDUSUARIO * IDPRODUTO --> NAT &
+     quantityProductInCart : IDUSUARIO * IDPRODUTO --> NAT &
+    !(uu, pp).
+    (uu:IDUSUARIO & pp:IDPRODUTO & uu : dom(cartContents) & pp : dom(cartContents(uu)) => 
+        {quantityProductInCart(uu, pp) |-> amountProductInCart(uu, pp) } = cartContents(uu)(pp)) &
+    
+    amountProductInLastPurchase : IDUSUARIO * IDPRODUTO --> NAT &
+    quantityProductInLastPurchase : IDUSUARIO * IDPRODUTO --> NAT &
+    !(uu, pp).
+    (uu:IDUSUARIO & pp:IDPRODUTO & uu : dom(lastPurchase) & pp : dom(lastPurchase(uu)) => 
+        {amountProductInLastPurchase(uu, pp) |-> quantityProductInLastPurchase(uu, pp) } = lastPurchase(uu)(pp))
+     
 INITIALISATION
     usuarios_i := IDUSUARIO*{userDummy};
     active_users := IDUSUARIO*{FALSE};
@@ -82,7 +108,14 @@ INITIALISATION
     produtos_i := IDPRODUTO*{productDummy};
     precoproduto_i := IDPRODUTO*{0};
     estoque_i := IDPRODUTO*{0};
-    dono_i := IDPRODUTO*{userIdDummy}
+    dono_i := IDPRODUTO*{userIdDummy};
+    
+    quantity := IDUSUARIO * IDPRODUTO * {0};
+    amount := IDUSUARIO * IDPRODUTO * {0};
+    quantityProductInCart := IDUSUARIO * IDPRODUTO * {0};
+    amountProductInCart := IDUSUARIO * IDPRODUTO * {0};
+    amountProductInLastPurchase := IDUSUARIO * IDPRODUTO * {0};
+    quantityProductInLastPurchase := IDUSUARIO * IDPRODUTO  * {0}
 
 OPERATIONS
 
@@ -94,8 +127,18 @@ OPERATIONS
             totalPriceCart_i(uu) :=  0;
             userIdsUsed_i(uu) := TRUE
         END;
-    //Falta implementar
-    removeUser(uu) = skip;
+
+    removeUser(uu) = 
+        BEGIN
+            usuarios_i(uu) := userDummy;
+            
+            produtos_i(uu) := productDummy;
+            estoque_i(uu) := 0;
+            precoproduto_i(uu) := 0;
+            
+            totalPriceCart_i(uu) := 0
+            
+        END;        
 
     altNameUser(uu, nn) =
         BEGIN
