@@ -16,6 +16,8 @@ CONCRETE_VARIABLES
     active_users,
     dividausuario_i,
     dividausuario_aberta_i,
+    usuariosinativos_i,
+    usersInactive,
 
     creditousuario_i,
 
@@ -31,6 +33,10 @@ INVARIANT
     usuarios_i : IDUSUARIO --> NOMEUSUARIO &
     dom(usuarios_i |>> {userDummy}) = dom(usuarios) &
     active_users : IDUSUARIO --> BOOL &
+
+    usuariosinativos_i : IDUSUARIO --> NAT &
+    usersInactive : IDUSUARIO --> BOOL &
+    dom(usuariosinativos_i) /\ dom(usersInactive |> {TRUE}) = dom (usuariosinativos) &
     
     creditousuario_i : IDUSUARIO --> NAT &
     dom( active_users |> {TRUE} ) /\ dom(creditousuario_i) = dom(creditousuario) &
@@ -64,6 +70,9 @@ INITIALISATION
     
     dividausuario_i := IDUSUARIO*{0};
     dividausuario_aberta_i := IDUSUARIO*{FALSE};
+
+    usuariosinativos_i := IDUSUARIO*{0};
+    usersInactive := IDUSUARIO*{FALSE};
 
     creditousuario_i := IDUSUARIO*{0};
 
@@ -132,7 +141,7 @@ OPERATIONS
         BEGIN
             precoproduto_i(ii) := pp
         END;
-        
+        //Falta fazer
     buyProduct(uu, pp, qq) = skip;
     returnProduct(uu, pp, rr, qq) = skip;
     addProductToCart(uu, pp, qq) = skip;
@@ -167,8 +176,14 @@ OPERATIONS
 	    END
 	END;
 
-    withdrawInactiveCredit(uu) = skip;
-    removeInactiveUser(uu) = skip;
+    withdrawInactiveCredit(uu) =
+	BEGIN
+	    usuariosinativos_i(uu) := 0
+	END;
+    removeInactiveUser(uu) =
+	BEGIN
+	    usersInactive(uu) := FALSE
+	END;
     
     /* ----- Operações de query ----- */
     oo <-- showUserCredit(uu) =
@@ -333,7 +348,7 @@ OPERATIONS
                 oo := FALSE
             END
         END;
-        
+        // Falta fazer!!!!
     oo <-- preBuyProduct(uu, pp, qq) = skip;
     oo <-- preReturnProduct(uu, pp, rr, qq) = skip;
     oo <-- preAddProductToCart(uu, pp, qq) = skip;
@@ -360,6 +375,26 @@ OPERATIONS
 		oo := FALSE
 	    END
 	END;
-    oo <-- preWithdrawInactiveCredit(uu) = skip;
-    oo <-- preRemoveInactiveUser(uu) = skip
+
+    oo <-- preWithdrawInactiveCredit(uu) =
+	VAR hasCredit, isInactive IN
+	    hasCredit := usuariosinativos_i(uu);
+	    isInactive := usersInactive(uu);
+	    IF hasCredit > 0 & isInactive = TRUE THEN
+		oo := TRUE
+	    ELSE
+		oo := FALSE
+	    END
+	END;
+
+    oo <-- preRemoveInactiveUser(uu) =
+	VAR hasCredit, isInactive IN
+	    hasCredit := usuariosinativos_i(uu);
+	    isInactive := usersInactive(uu);
+	    IF hasCredit <= 0 & isInactive = TRUE THEN
+		oo := TRUE
+	    ELSE
+		oo := FALSE
+	    END
+	END
  END
