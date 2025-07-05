@@ -306,14 +306,16 @@ OPERATIONS
         END;
 
     oo <-- preRemoveUser(uu) =
-        VAR isUsed, isActived, name IN
+        VAR isUsed, isActived, name, hasDebt IN
             isUsed := userIdsUsed_i(uu);
 	    isActived := active_users(uu);
 	    name := usuarios_i(uu);
+	    hasDebt :=  dividausuario_aberta_i(uu);
             IF  
 		isUsed = TRUE &
 		isActived = TRUE &
-		name /= userDummy
+		name /= userDummy &
+		hasDebt = FALSE
 	    THEN
                 oo := TRUE
             ELSE 
