@@ -9,7 +9,8 @@ VALUES
     NOMEUSUARIO = 0..9;
     userDummy = 0;
     productDummy = 0;
-    userIdDummy = 0
+    userIdDummy = 0;
+    productIdDummy = 0
     
 CONCRETE_VARIABLES
     usuarios_i,
@@ -37,7 +38,8 @@ CONCRETE_VARIABLES
     quantityProductInLastPurchase,
 
     // Auxiliares
-    allProducts
+    allProducts,
+    countAllProducts
     
     
 INVARIANT
@@ -94,7 +96,9 @@ INVARIANT
         {amountProductInLastPurchase(uu, pp) |-> quantityProductInLastPurchase(uu, pp) } = lastPurchase(uu)(pp)) &
      
     // Auxiliares
-    allProducts : 0..9 --> IDPRODUTO
+    allProducts : 0..9 --> IDPRODUTO &
+    countAllProducts : NAT
+
 INITIALISATION
     usuarios_i := IDUSUARIO*{userDummy};
     active_users := IDUSUARIO*{FALSE};
@@ -123,7 +127,8 @@ INITIALISATION
     quantityProductInLastPurchase := IDUSUARIO * IDPRODUTO  * {0};
 
     //Auxiliares
-    allProducts :: 0..9 --> IDPRODUTO
+    allProducts := (0..9)*{productIdDummy};
+    countAllProducts := 0
 
 OPERATIONS
 
@@ -133,7 +138,7 @@ OPERATIONS
             creditousuario_i(uu) := cc;
 	    active_users(uu) := TRUE;
             totalPriceCart_i(uu) :=  0;
-            userIdsUsed_i(uu) := TRUE
+            userIdsUsed_i(uu) := TRUE 
         END;
 
     removeUser(uu) = 
@@ -150,7 +155,7 @@ OPERATIONS
 		creditousuario_i(uu) := 0;
 		VAR index, range, dono_loop, pp IN
 		    index := 0;
-		    range := 10;
+		    range := countAllProducts;
 		    WHILE index < range DO
 			pp := allProducts(index);
 			dono_loop := dono_i(pp);
@@ -192,7 +197,9 @@ OPERATIONS
 	    produtos_i(ii) := nn;
 	    dono_i(ii) := uu;
 	    estoque_i(ii) := qq;
-	    precoproduto_i(ii) := pp
+	    precoproduto_i(ii) := pp;
+	    allProducts(countAllProducts) := ii;
+	    countAllProducts := countAllProducts + 1
 	END;
 
     removeProduct(ii)=
