@@ -393,13 +393,14 @@ OPERATIONS
     oo <-- preAddProduct(ii, nn, uu, qq, pp) =
 	BEGIN
 	    VAR prudctIsDummy, donoIsDummy IN
-		prudctIsDummy  := produtos_i(ii);
-		donoIsDummy :=  dono_i(ii);
+		prudctIsDummy := produtos_i(ii);
+		donoIsDummy := dono_i(ii);
 		IF 
 		    prudctIsDummy = productDummy &
 		    donoIsDummy = userIdDummy &
 		    uu /= userIdDummy &
-		    nn /= productDummy
+		    nn /= productDummy &
+		    ii /= productIdDummy
 		THEN
 		    oo := TRUE
 		ELSE
