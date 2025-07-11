@@ -10,7 +10,8 @@ VALUES
     userDummy = 0;
     productDummy = 0;
     userIdDummy = 0;
-    productIdDummy = 0
+    productIdDummy = 0;
+    MAX_PURCHASE = 15
     
 CONCRETE_VARIABLES
     usuarios_i,
@@ -37,6 +38,8 @@ CONCRETE_VARIABLES
     amountProductInLastPurchase,
     quantityProductInLastPurchase,
     purchaseUsers_i,
+    amountPurchaseHistory,
+    quantityPurchaseHistory,
     idPurchase_i,
 
     // Auxiliares
@@ -97,13 +100,19 @@ INVARIANT
     (uu:IDUSUARIO & pp:IDPRODUTO & uu : dom(lastPurchase) & pp : dom(lastPurchase(uu)) => 
         {amountProductInLastPurchase(uu, pp) |-> quantityProductInLastPurchase(uu, pp) } = lastPurchase(uu)(pp)) &
     
-    idPurchase_i : NAT &
+    idPurchase_i: 0..MAX_PURCHASE &
     idPurchase_i = idPurchase &
     
-    purchaseUsers_i: NAT --> IDUSUARIO &
-    dom(purchaseUsers_i) = dom(purchaseUsers) &
-     
-    // Auxiliares
+    purchaseUsers_i: 0..MAX_PURCHASE --> IDUSUARIO &
+    0..(idPurchase_i - 1) = dom(purchaseUsers) &
+    
+    amountPurchaseHistory :  (0..MAX_PURCHASE) * IDPRODUTO --> NAT &
+    quantityPurchaseHistory : (0..MAX_PURCHASE) * IDPRODUTO --> NAT &
+    !(ip, pp).
+    (ip:(0..MAX_PURCHASE) & pp:IDPRODUTO & ip : dom(purchaseHistory) & pp : dom(purchaseHistory(ip)) => 
+        {quantityPurchaseHistory(ip, pp) |-> amountPurchaseHistory(ip, pp) } = purchaseHistory(ip)(pp)) &
+    
+        // Auxiliares
     allProducts : 0..9 --> IDPRODUTO &
     countAllProducts : NAT
 
@@ -133,10 +142,11 @@ INITIALISATION
     amountProductInCart := IDUSUARIO * IDPRODUTO * {0};
     amountProductInLastPurchase := IDUSUARIO * IDPRODUTO * {0};
     quantityProductInLastPurchase := IDUSUARIO * IDPRODUTO  * {0};
+    purchaseUsers_i := (0..MAX_PURCHASE) * {userIdDummy};
+    amountPurchaseHistory := (0..MAX_PURCHASE) * IDPRODUTO * {0};
+    quantityPurchaseHistory := (0..MAX_PURCHASE) * IDPRODUTO * {0};
     idPurchase_i := 0;
-    purchaseUsers_i := {};
     
-
     //Auxiliares
     allProducts := (0..9)*{productIdDummy};
     countAllProducts := 0
@@ -234,14 +244,64 @@ OPERATIONS
         BEGIN
             precoproduto_i(ii) := pp
         END;
-        //Falta fazer
+
     buyProduct(uu, pp, qq) = 
         BEGIN
-            quantity(uu, pp) := precoproduto_i(pp);
-            amount(uu, pp) := qq
+            quantity(uu, pp) := qq;
+            amount(uu, pp) := precoproduto_i(pp);
+            amountPurchaseHistory(idPurchase_i, pp) := precoproduto_i(pp);
+            quantityPurchaseHistory(idPurchase_i, pp) := qq;
+            idPurchase_i := idPurchase_i + 1;
+            
+            VAR productOwner IN
+                productOwner := dono_i(pp);   
+                creditousuario_i(productOwner) := creditousuario_i(productOwner) +  (precoproduto_i(pp) * qq);
+                creditousuario_i(uu) := creditousuario_i(uu) -  (precoproduto_i(pp) * qq)
+            END;          
+            estoque_i(pp) := estoque_i(pp)  - qq
         END;
         
-    returnProduct(uu, pp, rr, qq) = skip;
+    returnProduct(uu, pp, rr, qq) = 
+        BEGIN
+                VAR ownerProduct IN
+                    ownerProduct := dono_i(pp);
+                    dividausuario_i(ownerProduct) := dividausuario_i(ownerProduct) + (qq * rr)
+                END;
+               
+                creditousuario_i(uu) := creditousuario_i(uu) + (qq * rr);
+                
+                quantity(uu, pp) :=  quantity(uu, pp) - qq;
+               
+                VAR count, lastIdPurchaseUser, currentUserId IN
+                    count := 0;
+                    lastIdPurchaseUser := 0;
+                    currentUserId := userIdDummy;
+                    
+                    WHILE count <= MAX_PURCHASE DO
+                        currentUserId := purchaseUsers_i(count);
+                        IF uu = currentUserId THEN
+                            lastIdPurchaseUser := count
+                        END;                        
+                                            
+                        count := count + 1
+                    INVARIANT
+                        count : NAT & lastIdPurchaseUser : NAT &  count <= MAX_PURCHASE & currentUserId : IDPRODUTO
+                    VARIANT
+                        MAX_PURCHASE - count
+                    END;
+                    
+                    quantityPurchaseHistory(lastIdPurchaseUser, pp) := quantityPurchaseHistory(lastIdPurchaseUser, pp) - qq
+                END;
+                
+                VAR productName IN
+                     productName := produtos_i(pp);
+                     IF productName /= productDummy THEN
+                         estoque_i(pp) := estoque_i(pp) + qq
+                    END
+                END                
+                    
+        END;
+        
     addProductToCart(uu, pp, qq) = skip;
     removeProductFromCart(uu, pp, rr, qq) = skip;
     buyProductsFromCart(uu) = skip;
