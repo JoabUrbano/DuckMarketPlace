@@ -36,6 +36,8 @@ CONCRETE_VARIABLES
     quantityProductInCart,
     amountProductInLastPurchase,
     quantityProductInLastPurchase,
+    purchaseUsers_i,
+    idPurchase_i,
 
     // Auxiliares
     allProducts,
@@ -94,6 +96,12 @@ INVARIANT
     !(uu, pp).
     (uu:IDUSUARIO & pp:IDPRODUTO & uu : dom(lastPurchase) & pp : dom(lastPurchase(uu)) => 
         {amountProductInLastPurchase(uu, pp) |-> quantityProductInLastPurchase(uu, pp) } = lastPurchase(uu)(pp)) &
+    
+    idPurchase_i : NAT &
+    idPurchase_i = idPurchase &
+    
+    purchaseUsers_i: NAT --> IDUSUARIO &
+    dom(purchaseUsers_i) = dom(purchaseUsers) &
      
     // Auxiliares
     allProducts : 0..9 --> IDPRODUTO &
@@ -125,6 +133,9 @@ INITIALISATION
     amountProductInCart := IDUSUARIO * IDPRODUTO * {0};
     amountProductInLastPurchase := IDUSUARIO * IDPRODUTO * {0};
     quantityProductInLastPurchase := IDUSUARIO * IDPRODUTO  * {0};
+    idPurchase_i := 0;
+    purchaseUsers_i := {};
+    
 
     //Auxiliares
     allProducts := (0..9)*{productIdDummy};
@@ -224,7 +235,12 @@ OPERATIONS
             precoproduto_i(ii) := pp
         END;
         //Falta fazer
-    buyProduct(uu, pp, qq) = skip;
+    buyProduct(uu, pp, qq) = 
+        BEGIN
+            quantity(uu, pp) := precoproduto_i(pp);
+            amount(uu, pp) := qq
+        END;
+        
     returnProduct(uu, pp, rr, qq) = skip;
     addProductToCart(uu, pp, qq) = skip;
     removeProductFromCart(uu, pp, rr, qq) = skip;

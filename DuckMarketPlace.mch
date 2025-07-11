@@ -4,13 +4,14 @@ SETS
     NOMEPRODUTO; NOMEUSUARIO; IDUSUARIO; IDPRODUTO
 
 CONSTANTS
-    userDummy, productDummy, userIdDummy, productIdDummy
+    userDummy, productDummy, userIdDummy, productIdDummy, MAX_PURCHASE
     
 PROPERTIES
     userDummy:NOMEUSUARIO &
     productDummy:NOMEPRODUTO &
     userIdDummy:IDUSUARIO &
-    productIdDummy : IDPRODUTO
+    productIdDummy : IDPRODUTO &
+    MAX_PURCHASE = 15
     
 VARIABLES
     usuarios,
@@ -50,9 +51,9 @@ INVARIANT
     ownerCartProducts : IDUSUARIO +-> IDUSUARIO &
     
     lastPurchase : IDUSUARIO +-> (IDPRODUTO +-> (NAT <-> NAT)) &
-    purchaseUsers : NAT +-> IDUSUARIO & 
-    purchaseHistory : NAT +-> (IDPRODUTO <-> (NAT <-> NAT)) &
-    idPurchase : NAT &
+    purchaseUsers : 0..MAX_PURCHASE +-> IDUSUARIO & 
+    purchaseHistory : 0..MAX_PURCHASE  +-> (IDPRODUTO <-> (NAT <-> NAT)) &
+    idPurchase : 0..MAX_PURCHASE  &
     cartSeller : IDUSUARIO +-> IDUSUARIO &
 
     // Invariants de MAXINT
@@ -64,7 +65,6 @@ INVARIANT
     !pp.(pp : ran(precoproduto) => pp <= MAXINT) &
 
     !bb.(bb : ran(totalPriceCart) => bb <= MAXINT) &
-    idPurchase <= MAXINT &
     
     // Invariants de conjuntos
     userIdsUsed <: IDUSUARIO &
@@ -245,7 +245,10 @@ buyProduct(uu, pp, qq) =
       qq <= MAXINT &
       ( creditousuario(dono(pp)) + (precoproduto(pp) * qq) ) <= MAXINT &
       precoproduto(pp) * qq <= creditousuario(uu) &
-      qq <= estoque(pp) 
+      qq <= estoque(pp)  &
+      card(purchaseUsers) < MAX_PURCHASE &
+      card(purchaseHistory) < MAX_PURCHASE  &
+      idPurchase < MAX_PURCHASE
     THEN
         lastPurchase(uu) := {pp |-> {precoproduto(pp) |-> qq}} ||
         purchaseUsers := purchaseUsers \/ {idPurchase |-> uu} ||
@@ -393,7 +396,10 @@ buyProductsFromCart(uu) =
         ( (idPurchase + 1) <= MAXINT ) &
 	uu : dom(cartSeller) &
 	cartSeller(uu) : dom(creditousuario) &
-	creditousuario(cartSeller(uu)) + totalPriceCart(uu) <= MAXINT
+	creditousuario(cartSeller(uu)) + totalPriceCart(uu) <= MAXINT &
+	card(purchaseUsers) < MAX_PURCHASE &
+	card(purchaseHistory) < MAX_PURCHASE   &
+     idPurchase < MAX_PURCHASE
     THEN
 	creditousuario := creditousuario <+ {
             uu |-> (creditousuario(uu) - totalPriceCart(uu) ),
