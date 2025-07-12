@@ -310,14 +310,93 @@ OPERATIONS
     addProductToCart(uu, pp, qq) = 
         BEGIN
             cartSeller_i(uu) := dono_i(pp);
-            quantityProductInCart(uu, pp) := qq;
+            quantityProductInCart(uu, pp) := quantityProductInCart(uu, pp) + qq;
             amountProductInCart(uu, pp) := precoproduto_i(pp);
             totalPriceCart_i(uu) := totalPriceCart_i(uu) + (precoproduto_i(pp) * qq);
             estoque_i(pp) := estoque_i(pp)  - qq
         END;
         
-    removeProductFromCart(uu, pp, rr, qq) = skip;
-    buyProductsFromCart(uu) = skip;
+    removeProductFromCart(uu, pp, rr, qq) = 
+        BEGIN
+            quantityProductInCart(uu, pp) := quantityProductInCart(uu, pp) - qq;
+            
+            VAR quantityProduct IN
+                quantityProduct := quantityProductInCart(uu, pp); 
+                IF quantityProduct = 0 THEN
+                    amountProductInCart(uu, pp) := 0
+                END
+            END;
+            
+            totalPriceCart_i(uu) := totalPriceCart_i(uu) - (precoproduto_i(pp) * qq);
+            
+             VAR productName IN
+                productName := produtos_i(pp);
+                IF productName /= productDummy THEN
+                    estoque_i(pp) := estoque_i(pp) + qq
+                END
+            END;
+            
+            
+            VAR index, range, productWhile, haveNoProducts, quantityWhile IN
+		        index := 0;
+		        range := countAllProducts;
+		        haveNoProducts := TRUE;
+		        
+		        WHILE index < range DO
+			        productWhile := allProducts(index);
+			        quantityWhile := quantityProductInCart(uu, productWhile);
+			        IF quantityWhile > 0 THEN
+			            haveNoProducts := FALSE
+			        END;
+			        index := index + 1
+		        INVARIANT
+			        index : NAT &
+			        index <= range &
+			        range : NAT
+		        VARIANT
+			        range - index
+		        END;
+		        
+		        IF haveNoProducts =TRUE THEN
+		            cartSeller_i(uu) := userIdDummy
+                END
+            END            
+        END;   
+        
+    buyProductsFromCart(uu) = 
+        BEGIN
+            creditousuario_i(uu) := creditousuario_i(uu) - totalPriceCart_i(uu);
+            creditousuario_i(cartSeller_i(uu)) :=  creditousuario_i(cartSeller_i(uu)) + totalPriceCart_i(uu);
+            totalPriceCart_i(uu) := 0;
+            
+            VAR index, range, productWhile IN
+		        index := 0;
+		        range := countAllProducts;
+		        
+		        WHILE index < range DO
+			        productWhile := allProducts(index);
+			        quantityProductInLastPurchase(uu, productWhile) := quantityProductInCart(uu, productWhile);
+			        amountProductInLastPurchase(uu, productWhile) := amountProductInCart(uu, productWhile);
+			        quantityPurchaseHistory(idPurchase_i, productWhile) := quantityProductInCart(uu, productWhile);
+			        amountPurchaseHistory(idPurchase_i, productWhile) := amountProductInCart(uu, productWhile);
+			        quantityProductInCart (uu, productWhile):= 0;
+			        amountProductInCart (uu, productWhile):= 0;
+			        index := index + 1
+		        INVARIANT
+			        index : NAT &
+			        index <= range &
+			        range : NAT
+		        VARIANT
+			        range - index
+		        END
+            END;
+            
+            cartSeller_i(uu) := userIdDummy;
+            
+            purchaseUsers_i(idPurchase_i) := uu;
+            
+            idPurchase_i := idPurchase_i + 1
+        END;        
     
     payDebt(uu) =
     BEGIN
@@ -379,8 +458,21 @@ OPERATIONS
 	END;
 
 	//Falta fazer ainda!!!!
-    oo <-- showUserCartValue(uu) = skip;
-    oo <-- showUserDebt(uu) = skip;
+    oo <-- showUserCartValue(uu) = 
+        VAR isDummy IN
+	        isDummy := usuarios_i(uu);
+	        IF isDummy /= userDummy THEN
+		        oo := totalPriceCart_i(uu)
+	        END
+	    END;
+        
+    oo <-- showUserDebt(uu) =
+        VAR isDummy IN
+	        isDummy := usuarios_i(uu);
+	        IF isDummy /= userDummy THEN
+		        oo := dividausuario_i(uu)
+	        END
+	    END;
     
     oo <-- showProductName(pp) =
 	BEGIN
@@ -469,6 +561,7 @@ OPERATIONS
     	        END
     	    END
 	END;
+	
     oo <-- preWithdrawCredit(uu, cc) =
 	BEGIN
             VAR isActived IN
@@ -499,6 +592,7 @@ OPERATIONS
 		END
 	    END
 	END;
+	
     oo <-- preRemoveProduct(ii) =
 	BEGIN
 	    VAR prudctIsDummy IN
@@ -540,13 +634,131 @@ OPERATIONS
                 oo := FALSE
             END
         END;
-        // Falta fazer!!!!
-    oo <-- preBuyProduct(uu, pp, qq) = skip;
-    oo <-- preReturnProduct(uu, pp, rr, qq) = skip;
-    oo <-- preAddProductToCart(uu, pp, qq) = skip;
-    oo <-- preRemoveProductFromCart(uu, pp, rr, qq) = skip;
-    oo <-- preBuyProductsFromCart(uu) = skip;
-    
+        
+    oo <-- preBuyProduct(uu, pp, qq) = 
+        VAR nu, np, dd, ee, pd, cu, cd, pdQq, cdPdQq IN
+            nu := usuarios_i(uu);
+            np := produtos_i(pp);
+            dd := dono_i(pp);
+            ee := estoque_i(pp);
+            pd := precoproduto_i(pp);
+            cu := creditousuario_i(uu);
+            cd := creditousuario_i(dd);
+            pdQq := pd * qq;
+            cdPdQq := cd + (pd * qq);
+            IF 
+                nu /= userDummy & 
+                np /= productDummy & 
+                uu /= dd &
+                qq > 0 &
+                qq <= MAXINT &
+                qq <=  ee &
+                pdQq <= cu &
+               cdPdQq <= MAXINT
+            THEN
+                oo := TRUE
+            ELSE
+                oo := FALSE
+            END
+        END;   
+        
+    oo <-- preReturnProduct(uu, pp, rr, qq) = 
+        VAR nu, np, ee, pd, cu, qqEe, am, du, amDu IN
+            nu := usuarios_i(uu);
+            np := produtos_i(pp);
+            ee := estoque_i(pp);
+            pd := precoproduto_i(pp);
+            cu := creditousuario_i(uu);
+            qqEe := qq + ee;
+            am := quantityProductInLastPurchase(uu, pp) * rr;
+            du := dividausuario_i(dono_i(pp));
+            amDu := du + am;
+            IF 
+                nu /= userDummy & 
+                np /= productDummy & 
+                rr <= MAXINT &
+                qq > 0 &
+                qq <= MAXINT &
+                qqEe <= MAXINT &
+                amDu <= MAXINT 
+            THEN
+                oo := TRUE
+            ELSE
+                oo := FALSE
+            END
+        END;
+        
+    oo <-- preAddProductToCart(uu, pp, qq) = 
+        VAR nu, np, dd, ee, qpc, qccQq, cs, tp, ppd, newTotal IN
+            nu := usuarios_i(uu);
+            np := produtos_i(pp);
+            dd := dono_i(pp);
+            ee := estoque_i(pp);
+            qpc := quantityProductInCart(uu, pp);
+            qccQq := qq + qpc;
+            cs := cartSeller_i(uu);
+            tp := totalPriceCart_i(uu);
+            ppd := precoproduto_i(pp);
+            newTotal := tp + (qq * ppd);
+            IF       
+                nu /= userDummy & 
+                np /= productDummy &
+                qq > 0 &
+                qq <= MAXINT &
+                uu /= dd &
+                qq <= ee &
+                qccQq <= MAXINT &
+                (cs = userIdDummy or cs = dd) &
+                newTotal <= MAXINT                
+             THEN
+                oo := TRUE
+            ELSE
+                oo := FALSE
+            END
+        END;      
+        
+    oo <-- preRemoveProductFromCart(uu, pp, rr, qq) = 
+        VAR nu, np, ee, qpc, qqEe  IN
+            nu := usuarios_i(uu);
+            np := produtos_i(pp);
+            ee := estoque_i(pp);
+            qpc := quantityProductInCart(uu, pp);
+            qqEe := qq + ee;
+            IF
+                nu /= userDummy & 
+                np /= productDummy &
+                qq > 0 &
+                qq <= MAXINT &
+                rr <= MAXINT &
+                qq <= qpc &
+                qqEe <= MAXINT
+            THEN
+                oo := TRUE
+            ELSE
+                oo := FALSE
+            END            
+        END;     
+        
+    oo <-- preBuyProductsFromCart(uu) = 
+        VAR cu, tp, cs, nd, cuCs, cuCsTp IN
+            cu := creditousuario_i(uu);
+            tp := totalPriceCart_i(uu);
+            cs := cartSeller_i(uu);
+            nd := usuarios_i(cs);
+            cuCs := creditousuario_i(cs);
+            cuCsTp := cuCs + tp;
+            IF        
+                cu >= tp &
+                idPurchase_i < MAX_PURCHASE &
+                nd /= userDummy &
+                cuCsTp <= MAXINT
+            THEN
+                oo := TRUE
+            ELSE
+                oo := FALSE
+            END            
+        END;
+        
     oo <-- prePayDebt(uu) =
 	VAR inDebt, isActive IN
 	    inDebt := dividausuario_aberta_i(uu);
