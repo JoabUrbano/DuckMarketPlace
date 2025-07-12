@@ -41,6 +41,7 @@ CONCRETE_VARIABLES
     amountPurchaseHistory,
     quantityPurchaseHistory,
     idPurchase_i,
+    cartSeller_i,
 
     // Auxiliares
     allProducts,
@@ -112,6 +113,9 @@ INVARIANT
     (ip:(0..MAX_PURCHASE) & pp:IDPRODUTO & ip : dom(purchaseHistory) & pp : dom(purchaseHistory(ip)) => 
         {quantityPurchaseHistory(ip, pp) |-> amountPurchaseHistory(ip, pp) } = purchaseHistory(ip)(pp)) &
     
+    cartSeller_i: IDUSUARIO --> IDUSUARIO &
+    dom( active_users |> {TRUE} ) /\ dom(cartSeller_i) = dom(cartSeller) &
+    
         // Auxiliares
     allProducts : 0..9 --> IDPRODUTO &
     countAllProducts : NAT
@@ -146,6 +150,7 @@ INITIALISATION
     amountPurchaseHistory := (0..MAX_PURCHASE) * IDPRODUTO * {0};
     quantityPurchaseHistory := (0..MAX_PURCHASE) * IDPRODUTO * {0};
     idPurchase_i := 0;
+    cartSeller_i := IDUSUARIO * {userIdDummy};
     
     //Auxiliares
     allProducts := (0..9)*{productIdDummy};
@@ -302,46 +307,55 @@ OPERATIONS
                     
         END;
         
-    addProductToCart(uu, pp, qq) = skip;
+    addProductToCart(uu, pp, qq) = 
+        BEGIN
+            cartSeller_i(uu) := dono_i(pp);
+            quantityProductInCart(uu, pp) := qq;
+            amountProductInCart(uu, pp) := precoproduto_i(pp);
+            totalPriceCart_i(uu) := totalPriceCart_i(uu) + (precoproduto_i(pp) * qq);
+            estoque_i(pp) := estoque_i(pp)  - qq
+        END;
+        
     removeProductFromCart(uu, pp, rr, qq) = skip;
     buyProductsFromCart(uu) = skip;
     
     payDebt(uu) =
-	BEGIN
-	    VAR divida, credito IN
-		divida := dividausuario_i(uu);
-		credito := creditousuario_i(uu);
-	    	IF divida <= credito THEN
-		    creditousuario_i(uu) := credito - divida;
-		    dividausuario_i(uu) := 0;
-		    dividausuario_aberta_i(uu) := FALSE
-	        ELSE
-		    dividausuario_i(uu) := divida - credito
-	        END
-	    END
-	END;
+    BEGIN
+        VAR divida, credito IN
+        divida := dividausuario_i(uu);
+        credito := creditousuario_i(uu);
+            IF divida <= credito THEN
+            creditousuario_i(uu) := credito - divida;
+            dividausuario_i(uu) := 0;
+            dividausuario_aberta_i(uu) := FALSE
+            ELSE
+            dividausuario_i(uu) := divida - credito
+            END
+        END
+    END;
 
     payDebtWithCredit(uu, cc) =
-	BEGIN
-	    VAR divida IN
-		divida := dividausuario_i(uu);
-	    	IF divida <= cc THEN
-		    dividausuario_i(uu) := 0;
-		    dividausuario_aberta_i(uu) := FALSE
-	        ELSE
-		    dividausuario_i(uu) := divida - cc
-	        END
-	    END
-	END;
+    BEGIN
+        VAR divida IN
+        divida := dividausuario_i(uu);
+            IF divida <= cc THEN
+            dividausuario_i(uu) := 0;
+            dividausuario_aberta_i(uu) := FALSE
+            ELSE
+            dividausuario_i(uu) := divida - cc
+            END
+        END
+    END;
 
     withdrawInactiveCredit(uu) =
-	BEGIN
-	    usuariosinativos_i(uu) := 0
-	END;
+    BEGIN
+        usuariosinativos_i(uu) := 0
+    END;
+    
     removeInactiveUser(uu) =
-	BEGIN
-	    usersInactive(uu) := FALSE
-	END;
+    BEGIN
+        usersInactive(uu) := FALSE
+    END;
     
     /* ----- Operações de query ----- */
     oo <-- showUserCredit(uu) =
@@ -353,6 +367,7 @@ OPERATIONS
 	        END
 	    END
 	END;
+	
     oo <-- showUserName(uu) = 
 	BEGIN
 	    VAR isDummy IN
