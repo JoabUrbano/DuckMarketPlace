@@ -313,8 +313,6 @@ returnProduct(uu, pp, rr, qq) =
         estoque := estoque <+ {
           pp |-> estoque(pp) + qq
         }
-    ELSE
-        skip
     END
   END;
 
@@ -333,7 +331,7 @@ addProductToCart(uu, pp, qq) =
       qq <= estoque(pp) &
       ( uu : dom(cartContents) &  pp : dom(cartContents(uu)) & precoproduto(pp) : dom(cartContents(uu)(pp)) => (cartContents(uu)(pp)(precoproduto(pp)) + qq) <= MAXINT )&
       (uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
-( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) <= MAXINT )
+      ( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) <= MAXINT )
     THEN
       IF uu /: dom(cartSeller) THEN
 	cartSeller := cartSeller \/ {uu |-> dono(pp)}
@@ -408,7 +406,7 @@ buyProductsFromCart(uu) =
 	creditousuario(cartSeller(uu)) + totalPriceCart(uu) <= MAXINT &
 	card(purchaseUsers) < MAX_PURCHASE &
 	card(purchaseHistory) < MAX_PURCHASE   &
-     idPurchase < MAX_PURCHASE
+        idPurchase < MAX_PURCHASE
     THEN
 	creditousuario := creditousuario <+ {
             uu |-> (creditousuario(uu) - totalPriceCart(uu) ),
@@ -460,7 +458,8 @@ withdrawInactiveCredit(uu) =
     PRE 
 	uu : IDUSUARIO &
 	uu : dom(usuariosinativos) &
-	uu /: dom(dividausuario)
+	uu /: dom(dividausuario) &
+	usuariosinativos(uu) > 0
     THEN 
         usuariosinativos := usuariosinativos <+ {uu |-> 0}
     END;
@@ -469,7 +468,8 @@ removeInactiveUser(uu) =
     PRE 
 	uu : IDUSUARIO &
 	uu : dom(usuariosinativos) &
-	usuariosinativos(uu) <= 0
+	usuariosinativos(uu) <= 0 &
+	uu /: dom(dividausuario)
     THEN 
         usuariosinativos := {uu} <<| usuariosinativos
     END;
@@ -666,10 +666,8 @@ oo <-- preReturnProduct(uu, pp, rr, qq) =
         qq <= lastPurchase(uu)(pp)(rr) &
 	(pp : dom(estoque) => ( qq + estoque(pp) ) <= MAXINT) &
         ( creditousuario(uu) + lastPurchase(uu)(pp)(rr) * rr ) <= MAXINT &
-        
         ( dono(pp) : dom(dividausuario) =>
 	( dividausuario(dono(pp)) + (lastPurchase(uu)(pp)(rr) * rr) ) <= MAXINT ) &
-        
         ( dono(pp) /: dom(dividausuario) => (lastPurchase(uu)(pp)(rr) * rr) <= MAXINT )
     THEN oo := TRUE
     ELSE oo := FALSE
@@ -687,7 +685,6 @@ oo <-- preAddProductToCart(uu, pp, qq) =
           uu : dom(totalPriceCart) &
           qq <= estoque(pp) &
           ( uu : dom(cartContents) &  pp : dom(cartContents(uu)) & precoproduto(pp) : dom(cartContents(uu)(pp)) => (cartContents(uu)(pp)(precoproduto(pp)) + qq) <= MAXINT )&
-          (uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
           (uu /: dom(cartSeller) or cartSeller(uu) = dono(pp)) &
           ( uu : dom(totalPriceCart) => ( totalPriceCart(uu) + (precoproduto(pp)*qq) ) <= MAXINT )
 	THEN oo := TRUE
@@ -725,7 +722,10 @@ oo <-- preBuyProductsFromCart(uu) =
 	   ( (idPurchase + 1) <= MAXINT ) &
 	   uu : dom(cartSeller) &
 	   cartSeller(uu) : dom(creditousuario) &
-	   creditousuario(cartSeller(uu)) + totalPriceCart(uu) <= MAXINT
+	   creditousuario(cartSeller(uu)) + totalPriceCart(uu) <= MAXINT &
+	   card(purchaseUsers) < MAX_PURCHASE &
+	   card(purchaseHistory) < MAX_PURCHASE   &
+           idPurchase < MAX_PURCHASE
 	THEN oo := TRUE
         ELSE oo := FALSE
         END
@@ -759,7 +759,8 @@ oo <-- preWithdrawInactiveCredit(uu) =
     PRE uu : IDUSUARIO THEN 
         IF 
 	    uu : dom(usuariosinativos) &
-	    uu /: dom(dividausuario)
+	    uu /: dom(dividausuario) &
+	    usuariosinativos(uu) > 0
 	THEN oo := TRUE
         ELSE oo := FALSE
         END
@@ -769,7 +770,8 @@ oo <-- preRemoveInactiveUser(uu) =
     PRE uu : IDUSUARIO THEN 
         IF 
 	    uu : dom(usuariosinativos) &
-	    usuariosinativos(uu) <= 0
+	    usuariosinativos(uu) <= 0 &
+	    uu /: dom(dividausuario)
 	THEN oo := TRUE
         ELSE oo := FALSE
         END

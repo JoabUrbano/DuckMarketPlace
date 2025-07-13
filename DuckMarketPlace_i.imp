@@ -68,7 +68,7 @@ INVARIANT
 
     dividausuario_i : IDUSUARIO --> NAT &
     dividausuario_aberta_i : IDUSUARIO --> BOOL &
-    dom(dividausuario_i) /\ dom(dividausuario_aberta_i |> {TRUE}) = dom(dividausuario) &
+    (  dom(dividausuario_aberta_i |> {TRUE})  <| dividausuario_i) =  dividausuario &
 
     /* ----- Produtos ----- */
     produtos_i : IDPRODUTO --> NOMEPRODUTO &
@@ -115,6 +115,7 @@ INVARIANT
     
     cartSeller_i: IDUSUARIO --> IDUSUARIO &
     dom( active_users |> {TRUE} ) /\ dom(cartSeller_i) = dom(cartSeller) &
+    ran(cartSeller_i |>> {userIdDummy}) = ran(cartSeller) &
     
         // Auxiliares
     allProducts : 0..9 --> IDPRODUTO &
@@ -207,7 +208,7 @@ OPERATIONS
 			        VAR count, currentUserId IN
                           count := 0;
                           currentUserId := userIdDummy;
-                          WHILE count < MAX_PURCHASE DO
+                          WHILE count <= MAX_PURCHASE DO
                               currentUserId := purchaseUsers_i(count);
                             
                               IF uu = currentUserId THEN
@@ -222,7 +223,7 @@ OPERATIONS
                               count <= MAX_PURCHASE & 
                               currentUserId : IDUSUARIO
                           VARIANT
-                              MAX_PURCHASE - count
+                              MAX_PURCHASE + 1 - count
                           END
                      END;
 			        
@@ -340,7 +341,7 @@ OPERATIONS
                     lastIdPurchaseUser := 0;
                     currentUserId := userIdDummy;
                     
-                    WHILE count < MAX_PURCHASE DO
+                    WHILE count <= MAX_PURCHASE DO
                         currentUserId := purchaseUsers_i(count);
                         IF uu = currentUserId THEN
                             lastIdPurchaseUser := count
@@ -350,7 +351,7 @@ OPERATIONS
                     INVARIANT
                         count : NAT & lastIdPurchaseUser : NAT &  count <= MAX_PURCHASE & currentUserId : IDUSUARIO
                     VARIANT
-                        MAX_PURCHASE - count
+                        MAX_PURCHASE + 1 - count
                     END;
                     
                     quantityPurchaseHistory(lastIdPurchaseUser, pp) := quantityPurchaseHistory(lastIdPurchaseUser, pp) - qq
@@ -433,10 +434,13 @@ OPERATIONS
 		        
 		        WHILE index < range DO
 			        productWhile := allProducts(index);
+			        
 			        quantityProductInLastPurchase(uu, productWhile) := quantityProductInCart(uu, productWhile);
 			        amountProductInLastPurchase(uu, productWhile) := amountProductInCart(uu, productWhile);
+			        
 			        quantityPurchaseHistory(idPurchase_i, productWhile) := quantityProductInCart(uu, productWhile);
 			        amountPurchaseHistory(idPurchase_i, productWhile) := amountProductInCart(uu, productWhile);
+			        
 			        quantityProductInCart (uu, productWhile):= 0;
 			        amountProductInCart (uu, productWhile):= 0;
 			        index := index + 1
@@ -466,7 +470,8 @@ OPERATIONS
             dividausuario_i(uu) := 0;
             dividausuario_aberta_i(uu) := FALSE
             ELSE
-            dividausuario_i(uu) := divida - credito
+            dividausuario_i(uu) := divida - credito;
+            creditousuario_i(uu) := 0
             END
         END
     END;
@@ -753,14 +758,16 @@ OPERATIONS
         END;   
         
     oo <-- preReturnProduct(uu, pp, rr, qq) = 
-        VAR nu, np, ee, pd, cu, qqEe, am, du, amDu IN
+        VAR nu, np, ee, pd, cu, qqEe, am, du, amDu, qlp, alp IN
             nu := usuarios_i(uu);
             np := produtos_i(pp);
             ee := estoque_i(pp);
             pd := precoproduto_i(pp);
             cu := creditousuario_i(uu);
             qqEe := qq + ee;
-            am := quantityProductInLastPurchase(uu, pp) * rr;
+            qlp := quantityProductInLastPurchase(uu, pp);
+            alp := amountProductInLastPurchase(uu, pp);
+            am := qlp * rr;
             du := dividausuario_i(dono_i(pp));
             amDu := du + am;
             IF 
@@ -770,7 +777,9 @@ OPERATIONS
                 qq > 0 &
                 qq <= MAXINT &
                 qqEe <= MAXINT &
-                amDu <= MAXINT 
+                amDu <= MAXINT &
+                qq <= qlp &
+                alp = rr
             THEN
                 oo := TRUE
             ELSE
@@ -808,12 +817,13 @@ OPERATIONS
         END;      
         
     oo <-- preRemoveProductFromCart(uu, pp, rr, qq) = 
-        VAR nu, np, ee, qpc, qqEe  IN
+        VAR nu, np, ee, qpc, qqEe, apc  IN
             nu := usuarios_i(uu);
             np := produtos_i(pp);
             ee := estoque_i(pp);
             qpc := quantityProductInCart(uu, pp);
             qqEe := qq + ee;
+            apc := amountProductInCart(uu, pp);
             IF
                 nu /= userDummy & 
                 np /= productDummy &
@@ -821,7 +831,8 @@ OPERATIONS
                 qq <= MAXINT &
                 rr <= MAXINT &
                 qq <= qpc &
-                qqEe <= MAXINT
+                qqEe <= MAXINT &
+                rr = apc
             THEN
                 oo := TRUE
             ELSE
@@ -871,10 +882,11 @@ OPERATIONS
 	END;
 
     oo <-- preWithdrawInactiveCredit(uu) =
-	VAR hasCredit, isInactive IN
+	VAR hasCredit, isInactive, hasDebit IN
 	    hasCredit := usuariosinativos_i(uu);
 	    isInactive := usersInactive(uu);
-	    IF hasCredit > 0 & isInactive = TRUE THEN
+	    hasDebit := dividausuario_aberta_i(uu);
+	    IF hasCredit > 0 & isInactive = TRUE & hasDebit = FALSE THEN
 		oo := TRUE
 	    ELSE
 		oo := FALSE
@@ -882,10 +894,11 @@ OPERATIONS
 	END;
 
     oo <-- preRemoveInactiveUser(uu) =
-	VAR hasCredit, isInactive IN
+	VAR hasCredit, isInactive, hasDebit IN
 	    hasCredit := usuariosinativos_i(uu);
 	    isInactive := usersInactive(uu);
-	    IF hasCredit <= 0 & isInactive = TRUE THEN
+	    hasDebit := dividausuario_aberta_i(uu);
+	    IF hasCredit <= 0 & isInactive = TRUE & hasDebit = FALSE THEN
 		oo := TRUE
 	    ELSE
 		oo := FALSE
