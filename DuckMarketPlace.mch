@@ -23,38 +23,42 @@ VARIABLES
     produtos,
     estoque,
     precoproduto,
-    
     dono,
+
     cartContents,
     totalPriceCart,
-    ownerCartProducts,
-
+    cartSeller,
     idPurchase,
     lastPurchase,
     purchaseUsers,
-    purchaseHistory,
-    cartSeller
+    purchaseHistory
     
 INVARIANT
     usuarios : IDUSUARIO +-> NOMEUSUARIO &
     creditousuario : IDUSUARIO +-> NAT &
     usuariosinativos : IDUSUARIO +-> NAT &
     dividausuario : IDUSUARIO +-> NAT &
+    userIdsUsed <: IDUSUARIO &
     
     produtos: IDPRODUTO +-> NOMEPRODUTO &
     estoque : IDPRODUTO +-> NAT & 
     precoproduto : IDPRODUTO +-> NAT & 
-    
     dono : IDPRODUTO +-> IDUSUARIO & 
+
+    // Itens do carrinho de um usuário (NAT <-> NAT = preço do produto <-> quantidade do produto)
     cartContents : IDUSUARIO +-> (IDPRODUTO +-> (NAT <-> NAT)) &
+    // Preço total do carrinho de um usuário
     totalPriceCart : IDUSUARIO +-> NAT &
-    ownerCartProducts : IDUSUARIO +-> IDUSUARIO &
-    
-    lastPurchase : IDUSUARIO +-> (IDPRODUTO +-> (NAT <-> NAT)) &
-    purchaseUsers : 0..MAX_PURCHASE +-> IDUSUARIO & 
-    purchaseHistory : 0..MAX_PURCHASE  +-> (IDPRODUTO <-> (NAT <-> NAT)) &
-    idPurchase : 0..MAX_PURCHASE  &
+    // Vendedor dos produtos do carrinho de um usuário
     cartSeller : IDUSUARIO +-> IDUSUARIO &
+    // Armazena a última compra de um usuário
+    lastPurchase : IDUSUARIO +-> (IDPRODUTO +-> (NAT <-> NAT)) &
+    // Armazena Os ids das compras de um usuário
+    purchaseUsers : 0..MAX_PURCHASE +-> IDUSUARIO & 
+    // Histórico das compras dos usuários
+    purchaseHistory : 0..MAX_PURCHASE  +-> (IDPRODUTO <-> (NAT <-> NAT)) &
+    // O ID da próxima compra
+    idPurchase : 0..MAX_PURCHASE  &
 
     // Invariants de MAXINT
     !cc.(cc : ran(creditousuario) => cc <= MAXINT) &
@@ -67,7 +71,6 @@ INVARIANT
     !bb.(bb : ran(totalPriceCart) => bb <= MAXINT) &
     
     // Invariants de conjuntos
-    userIdsUsed <: IDUSUARIO &
     dom(usuarios) <: userIdsUsed &
     dom(usuariosinativos) <: userIdsUsed &
     ran(dono) <: userIdsUsed &
@@ -86,12 +89,10 @@ INITIALISATION
     produtos := {} ||
     estoque := {} ||
     precoproduto := {} ||
-    
     dono := {} ||
+
     cartContents := {} ||
     totalPriceCart := {} ||
-    ownerCartProducts := {} ||
-
     idPurchase := 0 ||
     lastPurchase := {} ||
     purchaseUsers := {} ||

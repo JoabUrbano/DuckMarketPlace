@@ -162,7 +162,7 @@ OPERATIONS
         BEGIN
             usuarios_i(uu) :=  nn;
             creditousuario_i(uu) := cc;
-	    active_users(uu) := TRUE;
+            active_users(uu) := TRUE;
             totalPriceCart_i(uu) :=  0;
             userIdsUsed_i(uu) := TRUE 
         END;
@@ -171,41 +171,76 @@ OPERATIONS
         BEGIN
             usuarios_i(uu) := userDummy;
             totalPriceCart_i(uu) := 0;
-	    active_users(uu) := FALSE;
-	    VAR hasCredit IN
-		hasCredit := creditousuario_i(uu);
-		IF hasCredit >= 0 THEN
-		    usuariosinativos_i(uu) := hasCredit;
-		    usersInactive(uu) := TRUE
-		END;
-		creditousuario_i(uu) := 0;
-		VAR index, range, dono_loop, pp IN
-		    index := 0;
-		    range := countAllProducts;
-		    WHILE index < range DO
-			pp := allProducts(index);
-			dono_loop := dono_i(pp);
-			IF dono_loop = uu THEN
-			    produtos_i(pp) := productDummy;
-	    		    estoque_i(pp) := 0;
-	    		    precoproduto_i(pp) := 0
-			END;
-			index := index + 1
-		    INVARIANT
-			index : NAT &
-			index <= range &
-			range : NAT
-		    VARIANT
-			range - index
+	        active_users(uu) := FALSE;
+	        cartSeller_i(uu) := userIdDummy;
+	        
+	        VAR userCredits IN
+		        userCredits := creditousuario_i(uu);
+		        
+		        IF userCredits >= 0 THEN
+		            usuariosinativos_i(uu) := userCredits;
+		            usersInactive(uu) := TRUE
+		        END;
+		        
+		        creditousuario_i(uu) := 0
+	        END;
+	        
+	        VAR index, range, dono_loop, pp IN
+		        index := 0;
+		        range := countAllProducts;
+		        WHILE index < range DO
+			        pp := allProducts(index);
+			        dono_loop := dono_i(pp);
+			        
+			        IF dono_loop = uu THEN
+			            produtos_i(pp) := productDummy;
+	    		            estoque_i(pp) := 0;
+	    		            precoproduto_i(pp) := 0	    		                     
+			        END;
+			        
+			        quantity(uu, pp) := 0;
+			        amount(uu, pp) := 0;
+			        
+			        amountProductInCart(uu, pp) := 0;
+			        quantityProductInCart(uu, pp) := 0;
+			        
+			        VAR count, currentUserId IN
+                          count := 0;
+                          currentUserId := userIdDummy;
+                          WHILE count < MAX_PURCHASE DO
+                              currentUserId := purchaseUsers_i(count);
+                            
+                              IF uu = currentUserId THEN
+                                  quantityPurchaseHistory(count, pp) := 0;
+                                  amountPurchaseHistory(count, pp) := 0;
+                                  purchaseUsers_i(count) := userIdDummy
+                              END;                        
+                                                
+                              count := count + 1
+                          INVARIANT
+                              count : NAT & 
+                              count <= MAX_PURCHASE & 
+                              currentUserId : IDUSUARIO
+                          VARIANT
+                              MAX_PURCHASE - count
+                          END
+                     END;
+			        
+			        index := index + 1
+		        INVARIANT
+			        index : NAT &
+			        index <= range &
+			        range : NAT
+		        VARIANT
+		            range - index
+		        END
 		    END
-		END
-	    END
-        END; 
+         END; 
 
 
     altNameUser(uu, nn) =
         BEGIN
-    	    usuarios_i(uu) := nn
+    	        usuarios_i(uu) := nn
         END;
 
     addCredit(uu, cc) =
@@ -215,7 +250,7 @@ OPERATIONS
 
     withdrawCredit(uu, cc) = 
         BEGIN
-	    creditousuario_i(uu) := creditousuario_i(uu) - cc
+	        creditousuario_i(uu) := creditousuario_i(uu) - cc
         END;
 
     addProduct(ii, nn, uu, qq, pp) = 
@@ -232,7 +267,30 @@ OPERATIONS
 	BEGIN
 	    produtos_i(ii) := productDummy;
 	    estoque_i(ii) := 0;
-	    precoproduto_i(ii) := 0
+	    dono_i(ii) := userIdDummy;
+	    precoproduto_i(ii) := 0;
+	   
+	   VAR index, range, pp IN
+	       index := 0;
+	       range := countAllProducts;
+	       
+	       WHILE index < range DO
+	           pp := allProducts(index);
+	           
+	           IF pp = ii THEN
+	               allProducts(index) := productIdDummy
+                END;	               
+                index := index + 1	               
+            INVARIANT
+                index : NAT &
+                index <= range &
+                range : NAT
+            VARIANT
+                range - index
+            END
+        END;
+	   
+	    countAllProducts := countAllProducts - 1
 	END;
     
     altProductName(ii, nn) = 
@@ -282,7 +340,7 @@ OPERATIONS
                     lastIdPurchaseUser := 0;
                     currentUserId := userIdDummy;
                     
-                    WHILE count <= MAX_PURCHASE DO
+                    WHILE count < MAX_PURCHASE DO
                         currentUserId := purchaseUsers_i(count);
                         IF uu = currentUserId THEN
                             lastIdPurchaseUser := count
@@ -290,7 +348,7 @@ OPERATIONS
                                             
                         count := count + 1
                     INVARIANT
-                        count : NAT & lastIdPurchaseUser : NAT &  count <= MAX_PURCHASE & currentUserId : IDPRODUTO
+                        count : NAT & lastIdPurchaseUser : NAT &  count <= MAX_PURCHASE & currentUserId : IDUSUARIO
                     VARIANT
                         MAX_PURCHASE - count
                     END;
@@ -506,16 +564,18 @@ OPERATIONS
     
     /* ----- Operações de pré condições ----- */
     oo <-- preAddUser(uu, nn, cc) = 
-        VAR isUsed, isActived, name IN
-            isUsed := userIdsUsed_i(uu);
-	    isActived := active_users(uu);
-	    name := usuarios_i(uu);
-            IF  
-		isUsed = FALSE &
-		isActived = FALSE &
-		nn /= userDummy &
-		name = userDummy
-	    THEN
+        VAR isIdUsed, isActived, name IN
+            isIdUsed := userIdsUsed_i(uu);
+	        isActived := active_users(uu);
+	        name := usuarios_i(uu);
+            
+            IF isIdUsed = FALSE &
+                isActived = FALSE &
+                nn /= userDummy &
+                name = userDummy &
+                uu /= userIdDummy &
+                cc <= MAXINT
+            THEN
                 oo := TRUE
             ELSE 
                 oo := FALSE
@@ -525,15 +585,16 @@ OPERATIONS
     oo <-- preRemoveUser(uu) =
         VAR isUsed, isActived, name, hasDebt IN
             isUsed := userIdsUsed_i(uu);
-	    isActived := active_users(uu);
-	    name := usuarios_i(uu);
-	    hasDebt :=  dividausuario_aberta_i(uu);
-            IF  
-		isUsed = TRUE &
-		isActived = TRUE &
-		name /= userDummy &
-		hasDebt = FALSE
-	    THEN
+            isActived := active_users(uu);
+            name := usuarios_i(uu);
+            hasDebt :=  dividausuario_aberta_i(uu);
+            
+            IF isUsed = TRUE &
+                isActived = TRUE &
+                name /= userDummy &
+                hasDebt = FALSE &
+                uu /= userIdDummy
+            THEN
                 oo := TRUE
             ELSE 
                 oo := FALSE
@@ -542,8 +603,12 @@ OPERATIONS
     
     oo <-- preAltNameUser(uu, nn) = 
         VAR exist IN
-	    exist := usuarios_i(uu);
-	    IF  exist /= userDummy & nn /= userDummy THEN
+	        exist := usuarios_i(uu);
+    	    
+	        IF exist /= userDummy & 
+        	        nn /= userDummy &
+        	        uu /= userIdDummy
+        	    THEN
                 oo := TRUE
             ELSE 
                 oo := FALSE
@@ -552,34 +617,55 @@ OPERATIONS
         
     oo <-- preAddCredit(uu, cc) =
 	BEGIN
-	    VAR isActived IN
+        VAR isActived, userCreditSum IN
                 isActived := active_users(uu);
-	        IF isActived = TRUE THEN
-        	    oo := TRUE
-		ELSE
-		    oo := FALSE
-    	        END
+                userCreditSum := creditousuario_i(uu) + cc;
+                
+                IF isActived = TRUE &
+                    userCreditSum <= MAXINT &
+                    cc > 0 &
+                    cc <= MAXINT &
+                    uu /= userIdDummy
+                THEN
+        	            oo := TRUE
+        	        ELSE
+        	            oo := FALSE
+        	        END
     	    END
 	END;
 	
     oo <-- preWithdrawCredit(uu, cc) =
-	BEGIN
-            VAR isActived IN
-                isActived := active_users(uu);
-    	        IF isActived = TRUE THEN
-	            oo := TRUE
-		ELSE
-		    oo := FALSE
-	        END
-	    END
+	    BEGIN
+    	        VAR isActived, userCreditSub, userHasDebt, userCredits IN
+                    isActived := active_users(uu);
+                    userCreditSub := creditousuario_i(uu) - cc;
+                    userHasDebt := dividausuario_aberta_i(uu);
+                    userCredits := creditousuario_i(uu);
+             
+                    IF isActived = TRUE &
+                        cc > 0 &
+                        cc <= MAXINT &
+                        userCreditSub >= 0 &
+                        userHasDebt = FALSE &
+                        cc <= userCredits &
+                        uu /= userIdDummy                      
+                    THEN
+                        oo := TRUE
+                    ELSE
+                        oo := FALSE
+        	        END
+        	    END
         END;
 
     oo <-- preAddProduct(ii, nn, uu, qq, pp) =
 	BEGIN
-	    VAR prudctIsDummy, donoIsDummy IN
+	    VAR prudctIsDummy, donoIsDummy, isActived IN
+	     isActived := active_users(uu);
 		prudctIsDummy := produtos_i(ii);
 		donoIsDummy := dono_i(ii);
-		IF 
+		IF qq <= MAXINT &
+		    pp <= MAXINT &
+		    isActived = TRUE &
 		    prudctIsDummy = productDummy &
 		    donoIsDummy = userIdDummy &
 		    uu /= userIdDummy &
@@ -595,9 +681,10 @@ OPERATIONS
 	
     oo <-- preRemoveProduct(ii) =
 	BEGIN
-	    VAR prudctIsDummy IN
+	    VAR prudctIsDummy, donoIsDummy IN
 		prudctIsDummy  := produtos_i(ii);
-		IF prudctIsDummy /= productDummy THEN
+		donoIsDummy := dono_i(ii);
+		IF prudctIsDummy /= productDummy & donoIsDummy /= userIdDummy THEN
 		    oo := TRUE
 		ELSE
 		    oo := FALSE
@@ -608,7 +695,7 @@ OPERATIONS
     oo <-- preAltProductName(ii, nn) = 
         VAR np IN
             np := produtos_i(ii);
-            IF np /= productDummy & nn /= productDummy THEN
+            IF np /= productDummy & nn /= productDummy & ii /= productIdDummy THEN
                 oo := TRUE
             ELSE
                 oo := FALSE
@@ -618,7 +705,7 @@ OPERATIONS
     oo <-- preAltProductStock(ii, qq) = 
         VAR np IN
             np := produtos_i(ii);
-            IF np /= productDummy THEN
+            IF np /= productDummy & qq <= MAXINT & ii /= productIdDummy & qq > 0 THEN
                 oo := TRUE
             ELSE
                 oo := FALSE
@@ -628,7 +715,7 @@ OPERATIONS
     oo <-- preAltProductPrice(ii, pp) = 
         VAR np IN
             np := produtos_i(ii);
-            IF np /= productDummy THEN
+            IF np /= productDummy & pp <= MAXINT & ii /= productIdDummy & pp > 0 THEN
                 oo := TRUE
             ELSE
                 oo := FALSE
@@ -636,25 +723,28 @@ OPERATIONS
         END;
         
     oo <-- preBuyProduct(uu, pp, qq) = 
-        VAR nu, np, dd, ee, pd, cu, cd, pdQq, cdPdQq IN
-            nu := usuarios_i(uu);
-            np := produtos_i(pp);
-            dd := dono_i(pp);
-            ee := estoque_i(pp);
-            pd := precoproduto_i(pp);
-            cu := creditousuario_i(uu);
-            cd := creditousuario_i(dd);
-            pdQq := pd * qq;
-            cdPdQq := cd + (pd * qq);
+        VAR buyer, item, seller, stockProduct, productPrice, buyerCredits, sellerCredits, purchasePrice, newSellerCredits IN
+            buyer := usuarios_i(uu);
+            item := produtos_i(pp);
+            seller := dono_i(pp);
+            stockProduct := estoque_i(pp);
+            productPrice := precoproduto_i(pp);
+            buyerCredits := creditousuario_i(uu);
+            sellerCredits := creditousuario_i(seller);
+            purchasePrice := productPrice * qq;
+            newSellerCredits := sellerCredits + (productPrice * qq);
             IF 
-                nu /= userDummy & 
-                np /= productDummy & 
-                uu /= dd &
+                buyer /= userDummy & 
+                item /= productDummy & 
+                uu /= seller &
                 qq > 0 &
                 qq <= MAXINT &
-                qq <=  ee &
-                pdQq <= cu &
-               cdPdQq <= MAXINT
+                qq <=  stockProduct &
+                purchasePrice <= buyerCredits &
+                newSellerCredits <= MAXINT &
+                idPurchase_i < MAX_PURCHASE &
+                 pp /= productIdDummy &
+                 uu /= userIdDummy
             THEN
                 oo := TRUE
             ELSE
