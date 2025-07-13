@@ -193,7 +193,9 @@ addProduct(ii, nn, uu, qq, pp) =
 	pp <= MAXINT &
 	ii /: dom(dono) &
 	uu : dom(usuarios) &
-	nn /= productDummy
+	nn /= productDummy &
+	uu /= userIdDummy &
+	ii /= productIdDummy
     THEN produtos := produtos \/ {ii |-> nn} ||
          dono := dono \/ {ii |-> uu} ||
 	 estoque := estoque \/ {ii |-> qq} ||
@@ -201,8 +203,9 @@ addProduct(ii, nn, uu, qq, pp) =
     END;
 
 removeProduct(ii)=
-   PRE ii : IDPRODUTO & ii : dom(produtos)
+   PRE ii : IDPRODUTO & ii : dom(produtos) & ii : dom(precoproduto) & ii : dom(estoque) & ii : dom(dono)
    THEN produtos := {ii} <<| produtos ||
+	dono := {ii} <<| dono ||
         estoque := {ii} <<| estoque ||
         precoproduto := {ii} <<| precoproduto
    END;
@@ -212,7 +215,8 @@ altProductName(ii, nn) =
 	ii : IDPRODUTO &
 	ii : dom(produtos) &
 	nn : NOMEPRODUTO &
-	nn /= productDummy
+	nn /= productDummy &
+	ii /= productIdDummy
     THEN produtos := produtos <+ {ii |-> nn}
     END;
 
@@ -221,7 +225,9 @@ altProductStock(ii, qq) =
 	ii : IDPRODUTO &
 	ii : dom(produtos) &
 	qq : NAT &
-	qq <= MAXINT
+	qq <= MAXINT &
+	qq > 0 &
+	ii /= productIdDummy
     THEN estoque := estoque <+ {ii |-> qq}
     END;
 
@@ -230,7 +236,9 @@ altProductPrice(ii, pp) =
 	ii : IDPRODUTO &
 	ii : dom(produtos) &
 	pp : NAT &
-	pp <= MAXINT
+	pp <= MAXINT &
+	pp > 0 &
+	ii /= productIdDummy
     THEN precoproduto := precoproduto <+ {ii |-> pp}
     END;
 
@@ -581,7 +589,9 @@ oo <-- preAddProduct(ii, nn, uu, qq, pp) =
 	    ii /: dom(produtos) &
 	    ii /: dom(dono) &
 	    uu : dom(usuarios) &
-	    nn /= productDummy
+	    nn /= productDummy &
+	    uu /= userIdDummy &
+	    ii /= productIdDummy
 	THEN oo := TRUE
 	ELSE oo := FALSE
 	END
@@ -597,7 +607,7 @@ oo <-- preRemoveProduct(ii) =
 
 oo <-- preAltProductName(ii, nn) =
     PRE ii : IDPRODUTO & nn : NOMEPRODUTO THEN
-	IF ii : dom(produtos) & nn /= productDummy THEN
+	IF ii : dom(produtos) & nn /= productDummy & ii /= productIdDummy THEN
 	    oo := TRUE
 	ELSE oo := FALSE
 	END
@@ -605,7 +615,7 @@ oo <-- preAltProductName(ii, nn) =
 
 oo <-- preAltProductStock(ii, qq) =
     PRE ii : IDPRODUTO & qq : NAT THEN
-	IF ii : dom(produtos) & qq <= MAXINT THEN
+	IF ii : dom(produtos) & qq <= MAXINT & ii /= productIdDummy & qq > 0 THEN
 	    oo := TRUE
 	ELSE oo := FALSE
 	END
@@ -613,7 +623,7 @@ oo <-- preAltProductStock(ii, qq) =
 
 oo <-- preAltProductPrice(ii, pp) =
     PRE ii : IDPRODUTO & pp : NAT THEN
-	IF ii : dom(produtos) & pp <= MAXINT THEN
+	IF ii : dom(produtos) & pp <= MAXINT & ii /= productIdDummy & pp > 0 THEN
 	    oo := TRUE
 	ELSE oo := FALSE
 	END
@@ -629,7 +639,12 @@ oo <-- preBuyProduct(uu, pp, qq) =
       	    qq <= MAXINT &
 	    ( creditousuario(dono(pp)) + (precoproduto(pp) * qq) ) <= MAXINT &
       	    precoproduto(pp) * qq <= creditousuario(uu) &
-      	    qq <= estoque(pp)
+      	    qq <= estoque(pp) &
+	    card(purchaseUsers) < MAX_PURCHASE &
+            card(purchaseHistory) < MAX_PURCHASE &
+	    idPurchase < MAX_PURCHASE &
+	    pp /= productIdDummy &
+	    uu /= userIdDummy
 	THEN oo := TRUE
 	ELSE oo := FALSE
 	END
