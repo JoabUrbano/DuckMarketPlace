@@ -1874,6 +1874,93 @@ int main() {
     print_user_info(userId1);
     print_user_info(userId2);
 
+    // Testa a operação removeUser
+    printf("\n=== Testando operação removeUser ===\n");
+    
+    // Primeiro, vamos adicionar um usuário para podermos removê-lo
+    DuckMarketPlace__IDUSUARIO userIdToRemove = 5;
+    DuckMarketPlace__NOMEUSUARIO userNameToRemove = 505;
+    int32_t userCreditToRemove = 300;
+    
+    printf("\n1. Adicionando usuário %d para teste de remoção\n", userIdToRemove);
+    bool canAddUserToRemove = false;
+    DuckMarketPlace__preAddUser(userIdToRemove, userNameToRemove, userCreditToRemove, &canAddUserToRemove);
+    
+    if (canAddUserToRemove) {
+        DuckMarketPlace__addUser(userIdToRemove, userNameToRemove, userCreditToRemove);
+        printf("   Usuário %d adicionado com sucesso para teste de remoção!\n", userIdToRemove);
+        print_user_info(userIdToRemove);
+    } else {
+        printf("   ERRO: Não foi possível adicionar usuário para teste de remoção\n");
+    }
+    
+    // Teste 1: remover usuário existente (deve funcionar)
+    printf("\n2. Tentando remover usuário %d\n", userIdToRemove);
+    
+    bool canRemoveUser1 = false;
+    DuckMarketPlace__preRemoveUser(userIdToRemove, &canRemoveUser1);
+    
+    if (canRemoveUser1) {
+        printf("   Pré-condições verificadas: OK\n");
+        DuckMarketPlace__removeUser(userIdToRemove);
+        printf("   Usuário %d removido com sucesso!\n", userIdToRemove);
+        
+        // Tentar mostrar informações do usuário removido (deve falhar)
+        printf("   Tentando acessar informações do usuário removido:\n");
+        // Note: isso pode gerar erro ou mostrar valores dummy
+        print_user_info(userIdToRemove);
+    } else {
+        printf("   ERRO: Pré-condições não atendidas!\n");
+    }
+    
+    // Teste 2: tentar remover usuário que já foi removido (deve falhar)
+    printf("\n3. Tentando remover usuário %d novamente (deve falhar)\n", userIdToRemove);
+    
+    bool canRemoveUser2 = false;
+    DuckMarketPlace__preRemoveUser(userIdToRemove, &canRemoveUser2);
+    
+    if (canRemoveUser2) {
+        printf("   Pré-condições verificadas: OK\n");
+        DuckMarketPlace__removeUser(userIdToRemove);
+        printf("   Usuário removido com sucesso!\n");
+    } else {
+        printf("   ERRO: Pré-condições não atendidas! (Esperado - usuário já removido)\n");
+    }
+    
+    // Teste 3: tentar remover usuário inexistente (deve falhar)
+    printf("\n4. Tentando remover usuário inexistente (ID 99)\n");
+    
+    DuckMarketPlace__IDUSUARIO inexistentUserIdRemove = 99;
+    bool canRemoveUser3 = false;
+    DuckMarketPlace__preRemoveUser(inexistentUserIdRemove, &canRemoveUser3);
+    
+    if (canRemoveUser3) {
+        printf("   Pré-condições verificadas: OK\n");
+        DuckMarketPlace__removeUser(inexistentUserIdRemove);
+        printf("   Usuário removido com sucesso!\n");
+    } else {
+        printf("   ERRO: Pré-condições não atendidas! (Esperado - usuário inexistente)\n");
+    }
+    
+    // Teste 4: tentar remover usuário com ID dummy (deve falhar)
+    printf("\n5. Tentando remover usuário com ID dummy (deve falhar)\n");
+    
+    DuckMarketPlace__IDUSUARIO dummyUserIdRemove = DuckMarketPlace__userIdDummy;
+    bool canRemoveUser4 = false;
+    DuckMarketPlace__preRemoveUser(dummyUserIdRemove, &canRemoveUser4);
+    
+    if (canRemoveUser4) {
+        printf("   Pré-condições verificadas: OK\n");
+        DuckMarketPlace__removeUser(dummyUserIdRemove);
+        printf("   Usuário removido com sucesso!\n");
+    } else {
+        printf("   ERRO: Pré-condições não atendidas! (Esperado - ID dummy)\n");
+    }
+    
+    printf("\n   Estado final dos usuários ativos após testes de remoção:\n");
+    print_user_info(userId1);
+    print_user_info(userId2);
+
     printf("\n=== Fim dos testes ===\n");
     printf("Programa executado com sucesso!\n");
     
