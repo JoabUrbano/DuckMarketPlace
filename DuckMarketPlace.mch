@@ -59,6 +59,7 @@ INVARIANT
     purchaseHistory : 0..MAX_PURCHASE  +-> (IDPRODUTO <-> (NAT <-> NAT)) &
     // O ID da próxima compra
     idPurchase : 0..MAX_PURCHASE  &
+    idPurchase <= MAXINT &
 
     // Invariants de MAXINT
     !cc.(cc : ran(creditousuario) => cc <= MAXINT) &
@@ -73,11 +74,17 @@ INVARIANT
     // Invariants de conjuntos
     dom(usuarios) <: userIdsUsed &
     dom(usuariosinativos) <: userIdsUsed &
-    ran(dono) <: userIdsUsed &
-    dom(creditousuario) <: userIdsUsed &
+    dom(creditousuario) <: dom(usuarios) &
 
-    dom(usuarios) /\ dom(usuariosinativos) = {} &
-    dom(produtos) <: dom(dono)
+    ran(dono) <: userIdsUsed &
+
+    dom(cartContents) <: dom(usuarios) &
+    dom(totalPriceCart) <: dom(usuarios) &
+    dom(cartSeller) <: dom(usuarios) &
+    dom(lastPurchase) <: dom(usuarios) &
+    ran(purchaseUsers) <: userIdsUsed &
+
+    dom(dividausuario) <: dom(usuarios) \/ dom(usuariosinativos)
 
 INITIALISATION
     usuarios := {} ||
