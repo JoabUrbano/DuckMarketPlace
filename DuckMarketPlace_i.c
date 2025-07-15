@@ -1,5 +1,3 @@
-/* WARNING if type checker is not performed, translation could contain errors ! */
-
 #include "DuckMarketPlace.h"
 
 /* Clause CONCRETE_CONSTANTS */
@@ -322,6 +320,23 @@ void DuckMarketPlace__buyProduct(DuckMarketPlace__IDUSUARIO uu, DuckMarketPlace_
         DuckMarketPlace__creditousuario_i[uu] = DuckMarketPlace__creditousuario_i[uu]-(DuckMarketPlace__precoproduto_i[pp] * qq);
     }
     DuckMarketPlace__estoque_i[pp] = DuckMarketPlace__estoque_i[pp]-qq;
+    {
+        int32_t index;
+        int32_t range;
+        int32_t productWhile;
+        
+        index = 0;
+        range = DuckMarketPlace__countAllProducts;
+        while((index) < (range))
+        {
+            productWhile = DuckMarketPlace__allProducts[index];
+            DuckMarketPlace__quantityProductInLastPurchase[uu][productWhile] = 0;
+            DuckMarketPlace__amountProductInLastPurchase[uu][productWhile] = 0;
+            index = index+1;
+        }
+    }
+    DuckMarketPlace__quantityProductInLastPurchase[uu][pp] = qq;
+    DuckMarketPlace__amountProductInLastPurchase[uu][pp] = DuckMarketPlace__precoproduto_i[pp];
 }
 
 void DuckMarketPlace__returnProduct(DuckMarketPlace__IDUSUARIO uu, DuckMarketPlace__IDPRODUTO pp, int32_t rr, int32_t qq)
@@ -352,6 +367,16 @@ void DuckMarketPlace__returnProduct(DuckMarketPlace__IDUSUARIO uu, DuckMarketPla
             count = count+1;
         }
         DuckMarketPlace__quantityPurchaseHistory[lastIdPurchaseUser][pp] = DuckMarketPlace__quantityPurchaseHistory[lastIdPurchaseUser][pp]-qq;
+    }
+    DuckMarketPlace__quantityProductInLastPurchase[uu][pp] = DuckMarketPlace__quantityProductInLastPurchase[uu][pp]-qq;
+    {
+        int32_t quantInLastPurchase;
+        
+        quantInLastPurchase = DuckMarketPlace__quantityProductInLastPurchase[uu][pp];
+        if(quantInLastPurchase == 0)
+        {
+            DuckMarketPlace__amountProductInLastPurchase[uu][pp] = 0;
+        }
     }
     {
         int32_t productName;

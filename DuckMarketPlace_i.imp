@@ -317,12 +317,35 @@ OPERATIONS
             quantityPurchaseHistory(idPurchase_i, pp) := qq;
             idPurchase_i := idPurchase_i + 1;
             
+            
             VAR productOwner IN
                 productOwner := dono_i(pp);   
                 creditousuario_i(productOwner) := creditousuario_i(productOwner) +  (precoproduto_i(pp) * qq);
                 creditousuario_i(uu) := creditousuario_i(uu) -  (precoproduto_i(pp) * qq)
             END;          
-            estoque_i(pp) := estoque_i(pp)  - qq
+            estoque_i(pp) := estoque_i(pp) - qq;
+            
+            VAR index, range, productWhile IN
+		        index := 0;
+		        range := countAllProducts;
+		        
+		        WHILE index < range DO
+			        productWhile := allProducts(index);
+			        
+			        quantityProductInLastPurchase(uu, productWhile) := 0;
+			        amountProductInLastPurchase(uu, productWhile) := 0;
+			        index := index + 1
+		        INVARIANT
+			        index : NAT &
+			        index <= range &
+			        range : NAT
+		        VARIANT
+			        range - index
+		        END
+            END;
+            
+            quantityProductInLastPurchase(uu, pp) := qq;
+			amountProductInLastPurchase(uu, pp) := precoproduto_i(pp)
         END;
         
     returnProduct(uu, pp, rr, qq) = 
@@ -357,12 +380,20 @@ OPERATIONS
                     quantityPurchaseHistory(lastIdPurchaseUser, pp) := quantityPurchaseHistory(lastIdPurchaseUser, pp) - qq
                 END;
                 
+                quantityProductInLastPurchase(uu, pp) := quantityProductInLastPurchase(uu, pp) - qq;
+                VAR quantInLastPurchase IN
+                    quantInLastPurchase := quantityProductInLastPurchase(uu, pp);
+                    IF quantInLastPurchase = 0 THEN
+                        amountProductInLastPurchase(uu, pp) := 0
+                    END
+                END;
+                
                 VAR productName IN
                      productName := produtos_i(pp);
                      IF productName /= productDummy THEN
                          estoque_i(pp) := estoque_i(pp) + qq
                     END
-                END                
+                END        
                     
         END;
         
