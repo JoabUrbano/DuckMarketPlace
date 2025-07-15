@@ -477,6 +477,44 @@ void buy_product_operation() {
     pause_screen();
 }
 
+void return_product_operation() {
+    print_header();
+    printf(BOLD "═══ DEVOLVER PRODUTO ═══\n" RESET);
+    
+    int user_id = get_int_input("Digite o ID do usuário: ");
+    int product_id = get_int_input("Digite o ID do produto: ");
+    int product_price = get_int_input("Digite o preço do produto: ");
+    int product_quant = get_int_input("Digite a quantidade do produto: ");
+    
+    printf("\nEstado antes da devolução:\n");
+    print_user_info(user_id);
+    
+    bool can_return;
+    DuckMarketPlace__preReturnProduct(
+        user_id,
+        product_id,
+        product_price,
+        product_quant,
+        &can_return);
+    
+    if (can_return) {
+        DuckMarketPlace__returnProduct(
+        user_id,
+        product_id,
+        product_price,
+        product_quant);
+
+        show_success("Produto devolvido com sucesso!");
+        printf("\nEstado após devolver:\n");
+        print_user_info(user_id);
+    } else {
+        show_error("Não foi possível devolver o produto!");
+        printf(YELLOW "Verifique se há produtos comprados com as informações especificadas.\n" RESET);
+    }
+    
+    pause_screen();
+}
+
 void add_to_cart_operation() {
     print_header();
     printf(BOLD "═══ ADICIONAR AO CARRINHO ═══\n" RESET);
@@ -498,6 +536,44 @@ void add_to_cart_operation() {
         print_user_info(user_id);
     } else {
         show_error("Não foi possível adicionar ao carrinho!");
+    }
+    
+    pause_screen();
+}
+
+void remove_from_cart_operation() {
+    print_header();
+    printf(BOLD "═══ REMOVER PRODUTO DO CARRINHO ═══\n" RESET);
+    
+    int user_id = get_int_input("Digite o ID do usuário: ");
+    int product_id = get_int_input("Digite o ID do produto: ");
+    int product_price = get_int_input("Digite o preço do produto: ");
+    int product_quant = get_int_input("Digite a quantidade do produto: ");
+    
+    printf("\nEstado antes de remover o produto:\n");
+    print_user_info(user_id);
+    
+    bool can_remove;
+    DuckMarketPlace__preRemoveProductFromCart(
+        user_id,
+        product_id,
+        product_price,
+        product_quant,
+        &can_remove);
+    
+    if (can_remove) {
+        DuckMarketPlace__removeProductFromCart(
+        user_id,
+        product_id,
+        product_price,
+        product_quant);
+
+        show_success("Produto removido do carrinho com sucesso!");
+        printf("\nEstado após a remoção:\n");
+        print_user_info(user_id);
+    } else {
+        show_error("Não foi possível remover o produto do carrinho!");
+        printf(YELLOW "Verifique se há produtos no carrinho com as informações especificadas.\n" RESET);
     }
     
     pause_screen();
@@ -598,8 +674,10 @@ void transaction_menu() {
         print_header();
         printf(BOLD "═══ TRANSAÇÕES ═══\n" RESET);
         printf("1. Comprar Produto\n");
-        printf("2. Adicionar ao Carrinho\n");
-        printf("3. Comprar Carrinho\n");
+        printf("2. Devolver Produto\n");
+        printf("3. Adicionar ao Carrinho\n");
+        printf("4. Remover produto do carrinho Carrinho\n");
+        printf("5. Comprar Carrinho\n");
         printf("0. Voltar ao Menu Principal\n");
         printf("\nEscolha uma opção: ");
         
@@ -608,8 +686,10 @@ void transaction_menu() {
         
         switch (choice) {
             case 1: buy_product_operation(); break;
-            case 2: add_to_cart_operation(); break;
-            case 3: buy_cart_operation(); break;
+            case 2: return_product_operation(); break;
+            case 3: add_to_cart_operation(); break;
+            case 4: remove_from_cart_operation(); break;
+            case 5: buy_cart_operation(); break;
             case 0: break;
             default: 
                 show_error("Opção inválida!");
