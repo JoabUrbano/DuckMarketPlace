@@ -68,15 +68,22 @@ void print_user_info(DuckMarketPlace__IDUSUARIO userId) {
     DuckMarketPlace__NOMEUSUARIO userName;
     int32_t userCredit;
     int32_t cartValue;
+    int32_t userDebt;
     
     DuckMarketPlace__showUserName(userId, &userName);
     DuckMarketPlace__showUserCredit(userId, &userCredit);
     DuckMarketPlace__showUserCartValue(userId, &cartValue);
+    DuckMarketPlace__showUserDebt(userId, &userDebt);
     
     printf(GREEN "┌─ Usuário ID: %d ─────────────────────────────┐\n", userId);
     printf("│ Nome: %-10d                              │\n", userName);
     printf("│ Crédito: %-10d                          │\n", userCredit);
     printf("│ Valor do Carrinho: %-10d                │\n", cartValue);
+    if (userDebt > 0) {
+        printf("│ " RED "Dívida: %-10d" GREEN "                         │\n", userDebt);
+    } else {
+        printf("│ Dívida: %-10d                           │\n", userDebt);
+    }
     printf("└─────────────────────────────────────────────────┘" RESET "\n");
 }
 
@@ -282,6 +289,58 @@ void remove_user_operation() {
     pause_screen();
 }
 
+void pay_debt_operation() {
+    print_header();
+    printf(BOLD "═══ PAGAR DÍVIDA ═══\n" RESET);
+    
+    int user_id = get_int_input("Digite o ID do usuário: ");
+    
+    printf("\nEstado atual:\n");
+    print_user_info(user_id);
+    
+    // Mostrar dívida atual
+    int32_t user_debt;
+    DuckMarketPlace__showUserDebt(user_id, &user_debt);
+    printf("\n" YELLOW "Dívida atual: %d\n" RESET, user_debt);
+    
+    if (user_debt <= 0) {
+        printf(GREEN "✓ Usuário não possui dívidas!\n" RESET);
+        pause_screen();
+        return;
+    }
+    
+    printf(RED "\nATENÇÃO: Esta operação irá pagar toda a dívida do usuário.\n" RESET);
+    printf("Digite 1 para confirmar ou 0 para cancelar: ");
+    int confirm;
+    scanf("%d", &confirm);
+    while (getchar() != '\n');
+    
+    if (confirm != 1) {
+        printf(YELLOW "Operação cancelada.\n" RESET);
+        pause_screen();
+        return;
+    }
+    
+    bool can_pay;
+    DuckMarketPlace__prePayDebt(user_id, &can_pay);
+    
+    if (can_pay) {
+        DuckMarketPlace__payDebt(user_id);
+        show_success("Dívida paga com sucesso!");
+        printf("\nEstado após pagamento:\n");
+        print_user_info(user_id);
+        
+        // Mostrar nova dívida
+        DuckMarketPlace__showUserDebt(user_id, &user_debt);
+        printf("\n" GREEN "Nova dívida: %d\n" RESET, user_debt);
+    } else {
+        show_error("Não foi possível pagar a dívida!");
+        printf(YELLOW "Verifique se o usuário existe e possui dívidas.\n" RESET);
+    }
+    
+    pause_screen();
+}
+
 // ======================== OPERAÇÕES DE PRODUTO ========================
 
 void add_product_operation() {
@@ -481,7 +540,8 @@ void user_menu() {
         printf("3. Alterar Nome de Usuário\n");
         printf("4. Adicionar Crédito\n");
         printf("5. Retirar Crédito\n");
-        printf("6. Remover Usuário\n");
+        printf("6. Pagar Dívida\n");
+        printf("7. Remover Usuário\n");
         printf("0. Voltar ao Menu Principal\n");
         printf("\nEscolha uma opção: ");
         
@@ -494,7 +554,8 @@ void user_menu() {
             case 3: alter_user_name_operation(); break;
             case 4: add_credit_operation(); break;
             case 5: withdraw_credit_operation(); break;
-            case 6: remove_user_operation(); break;
+            case 6: pay_debt_operation(); break;
+            case 7: remove_user_operation(); break;
             case 0: break;
             default: 
                 show_error("Opção inválida!");
