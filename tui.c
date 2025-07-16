@@ -341,6 +341,86 @@ void pay_debt_operation() {
     pause_screen();
 }
 
+void pay_debt_with_credit_operation() {
+    print_header();
+    printf(BOLD "═══ PAGAR DÍVIDA ═══\n" RESET);
+    
+    int user_id = get_int_input("Digite o ID do usuário: ");
+    
+    printf("\nEstado atual:\n");
+    print_user_info(user_id);
+    
+    // Mostrar dívida atual
+    int32_t user_debt;
+    DuckMarketPlace__showUserDebt(user_id, &user_debt);
+    printf("\n" YELLOW "Dívida atual: %d\n" RESET, user_debt);
+
+    int credit = get_int_input("Digite o valor do cretido para pagar a dívida: ");
+    
+    if (user_debt <= 0) {
+        printf(GREEN "✓ Usuário não possui dívidas!\n" RESET);
+        pause_screen();
+        return;
+    }
+    
+    bool can_pay;
+    DuckMarketPlace__prePayDebtWithCredit(user_id, credit, &can_pay);
+    
+    if (can_pay) {
+        DuckMarketPlace__payDebtWithCredit(user_id, credit);
+        show_success("Dívida paga com sucesso!");
+        printf("\nEstado após pagamento:\n");
+        print_user_info(user_id);
+        
+        // Mostrar nova dívida
+        DuckMarketPlace__showUserDebt(user_id, &user_debt);
+        printf("\n" GREEN "Nova dívida: %d\n" RESET, user_debt);
+    } else {
+        show_error("Não foi possível pagar a dívida!");
+        printf(YELLOW "Verifique se o usuário existe e possui dívidas.\n" RESET);
+    }
+    
+    pause_screen();
+}
+
+void withdraw_inactive_credit_operation() {
+    print_header();
+    printf(BOLD "═══ RETIRAR CRÉDITO INATIVO ═══\n" RESET);
+    
+    int user_id = get_int_input("Digite o ID do usuário: ");
+    
+    bool can_withdraw;
+    DuckMarketPlace__preWithdrawInactiveCredit(user_id, &can_withdraw);
+    
+    if (can_withdraw) {
+        DuckMarketPlace__withdrawInactiveCredit(user_id);
+        show_success("Crédito do usuario inativo retirado com sucesso!");
+    } else {
+        show_error("Não foi possível retirar crédito do usuario inativo!");
+    }
+    
+    pause_screen();
+}
+
+void delete_inactive_user_operation() {
+    print_header();
+    printf(BOLD "═══ DELETAR USUARIO INATIVO ═══\n" RESET);
+    
+    int user_id = get_int_input("Digite o ID do usuário: ");
+    
+    bool can_delete;
+    DuckMarketPlace__preRemoveInactiveUser(user_id, &can_delete);
+    
+    if (can_delete) {
+        DuckMarketPlace__removeInactiveUser(user_id);
+        show_success("Usuario inativo deletado com sucesso!");
+    } else {
+        show_error("Não foi possível deletar usuario inativo! Verifique se ele possui crédito ou se está inativo.");
+    }
+    
+    pause_screen();
+}
+
 // ======================== OPERAÇÕES DE PRODUTO ========================
 
 void add_product_operation() {
@@ -617,7 +697,10 @@ void user_menu() {
         printf("4. Adicionar Crédito\n");
         printf("5. Retirar Crédito\n");
         printf("6. Pagar Dívida\n");
-        printf("7. Remover Usuário\n");
+        printf("7. Pagar Dívida com crédito externo\n");
+        printf("8. Sacar crédito usuario inativo\n");
+        printf("9. Remover usuario inativo\n");
+        printf("10. Remover Usuário\n");
         printf("0. Voltar ao Menu Principal\n");
         printf("\nEscolha uma opção: ");
         
@@ -631,7 +714,10 @@ void user_menu() {
             case 4: add_credit_operation(); break;
             case 5: withdraw_credit_operation(); break;
             case 6: pay_debt_operation(); break;
-            case 7: remove_user_operation(); break;
+            case 7: pay_debt_with_credit_operation(); break;
+            case 8: withdraw_inactive_credit_operation(); break;
+            case 9: delete_inactive_user_operation(); break;
+            case 10: remove_user_operation(); break;
             case 0: break;
             default: 
                 show_error("Opção inválida!");
