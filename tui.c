@@ -26,9 +26,9 @@ void clear_screen() {
 
 // Função para verificar se um usuário existe
 bool user_exists(DuckMarketPlace__IDUSUARIO userId) {
-    bool can_remove;
-    DuckMarketPlace__preRemoveUser(userId, &can_remove);
-    return can_remove;
+    bool exist;
+    DuckMarketPlace__preAltNameUser(userId, 1, &exist);
+    return exist;
 }
 
 // Função para verificar se um produto existe  
@@ -166,7 +166,7 @@ void list_users_operation() {
     
     bool found_users = false;
     
-    for (int i = 1; i <= 10; i++) {
+    for (int i = 1; i <= 9; i++) {
         if (user_exists(i)) {
             print_user_info(i);
             printf("\n");

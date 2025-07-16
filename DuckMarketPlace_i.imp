@@ -393,7 +393,9 @@ OPERATIONS
                      IF productName /= productDummy THEN
                          estoque_i(pp) := estoque_i(pp) + qq
                     END
-                END        
+                END;
+                
+                dividausuario_aberta_i(dono_i(pp)) := TRUE
                     
         END;
         

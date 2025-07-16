@@ -387,6 +387,7 @@ void DuckMarketPlace__returnProduct(DuckMarketPlace__IDUSUARIO uu, DuckMarketPla
             DuckMarketPlace__estoque_i[pp] = DuckMarketPlace__estoque_i[pp]+qq;
         }
     }
+    DuckMarketPlace__dividausuario_aberta_i[DuckMarketPlace__dono_i[pp]] = true;
 }
 
 void DuckMarketPlace__addProductToCart(DuckMarketPlace__IDUSUARIO uu, DuckMarketPlace__IDPRODUTO pp, int32_t qq)
